@@ -1,6 +1,25 @@
 import React, { useState, useEffect, useMemo, type ReactNode } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { dummyPlayers, dummyTeams, dummyMatches, dummyScheduled, dummyAdminTeams, dummyAdminUsers, dummyLogs, dummyBackups, dummyDbBackups } from '../data/dummyData'
 import type { LeaderboardPlayer, ScheduledMatch, MatchPlayer } from '../data/types'
+import { api, ensureGuestSession } from '../api/client'
+
+type WCOutcome = 'home_win' | 'away_win' | 'draw'
+interface WorldCupMatch {
+  id: number
+  home_team: string
+  away_team: string
+  home_team_code: string | null
+  away_team_code: string | null
+  scheduled_at: string
+  stage: string | null
+  group: string | null
+  status: string
+  home_score: number | null
+  away_score: number | null
+  result: WCOutcome | null
+  my_bet: { id: number; predicted_outcome: WCOutcome; points_earned: number | null } | null
+}
 
 // ─── XP Window component ───────────────────────────────────────────────────
 
@@ -705,6 +724,277 @@ function BettingContent() {
   )
 }
 
+// ─── Fortuna content ───────────────────────────────────────────────────────
+
+const TLA_TO_ISO2: Record<string, string> = {
+  ALG: 'DZ', ARG: 'AR', AUS: 'AU', AUT: 'AT', BEL: 'BE', BIH: 'BA', BRA: 'BR',
+  CAN: 'CA', CIV: 'CI', COD: 'CD', COL: 'CO', CPV: 'CV', CRO: 'HR', CUW: 'CW', CZE: 'CZ',
+  ECU: 'EC', EGY: 'EG', ENG: 'GB', ESP: 'ES', FRA: 'FR', GER: 'DE', GHA: 'GH',
+  HAI: 'HT', IRN: 'IR', IRQ: 'IQ', JOR: 'JO', JPN: 'JP', KOR: 'KR', KSA: 'SA', MAR: 'MA',
+  MEX: 'MX', NED: 'NL', NOR: 'NO', NZL: 'NZ', PAN: 'PA', PAR: 'PY', POR: 'PT',
+  QAT: 'QA', RSA: 'ZA', SEN: 'SN', SUI: 'CH', SWE: 'SE', TUN: 'TN', TUR: 'TR',
+  URY: 'UY', USA: 'US', UZB: 'UZ',
+}
+
+function teamFlag(tla: string | null): string {
+  if (!tla) return '🏳️'
+  const iso2 = TLA_TO_ISO2[tla]
+  if (!iso2 || iso2.includes('-')) return '🏳️'
+  return [...iso2.toUpperCase()].map(c => String.fromCodePoint(0x1F1E6 - 65 + c.charCodeAt(0))).join('')
+}
+
+const OUTCOME_LABEL: Record<WCOutcome, string> = { home_win: '1', draw: 'X', away_win: '2' }
+const OUTCOME_FULL: Record<WCOutcome, string> = { home_win: 'Victorie acasa', draw: 'Egal', away_win: 'Victorie deplasare' }
+
+function FortunaContent() {
+  const qc = useQueryClient()
+  const [tab, setTab] = useState<'matches' | 'my'>('matches')
+  const [selection, setSelection] = useState<Record<number, WCOutcome>>({})
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    ensureGuestSession().then(() => setReady(true))
+  }, [])
+
+  const { data: matches = [], isLoading } = useQuery<WorldCupMatch[]>({
+    queryKey: ['wc-matches'],
+    queryFn: () => api.get('/api/worldcup/matches').then((r) => r.data),
+    enabled: ready,
+    refetchInterval: 60_000,
+  })
+
+  const placeBet = useMutation({
+    mutationFn: (vars: { match_id: number; predicted_outcome: WCOutcome }) =>
+      api.post('/api/worldcup/bets', vars).then((r) => r.data),
+    onSuccess: (_d, vars) => {
+      qc.invalidateQueries({ queryKey: ['wc-matches'] })
+      setSelection((prev) => { const n = { ...prev }; delete n[vars.match_id]; return n })
+    },
+  })
+
+  const updateBet = useMutation({
+    mutationFn: (vars: { bet_id: number; predicted_outcome: WCOutcome }) =>
+      api.put(`/api/worldcup/bets/${vars.bet_id}`, { predicted_outcome: vars.predicted_outcome }).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['wc-matches'] }),
+  })
+
+  const deleteBet = useMutation({
+    mutationFn: (bet_id: number) => api.delete(`/api/worldcup/bets/${bet_id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['wc-matches'] }),
+  })
+
+  const now = new Date()
+  const isLocked = (m: WorldCupMatch) =>
+    new Date(m.scheduled_at) <= now || !['SCHEDULED', 'TIMED'].includes(m.status)
+
+  const groups = useMemo(() => {
+    const map: Record<string, WorldCupMatch[]> = {}
+    for (const m of matches) {
+      const key = m.scheduled_at.slice(0, 10)
+      if (!map[key]) map[key] = []
+      map[key].push(m)
+    }
+    return Object.keys(map).sort().map((day) => ({ day, matches: map[day] }))
+  }, [matches])
+
+  const myBets = useMemo(() => matches.filter((m) => m.my_bet), [matches])
+
+  const BG = '#0c0c0c', GOLD = '#f5c400', DIM = '#666', BORDER = 'rgba(255,255,255,0.08)'
+  const gradientBorder = {
+    background: 'linear-gradient(#0c0c0c,#0c0c0c) padding-box, linear-gradient(135deg,#f5c400 0%,#b87800 50%,#f5c400 100%) border-box',
+    border: '2px solid transparent',
+  }
+
+  const OutcomeBtn = ({ outcome, selected, onClick }: { outcome: WCOutcome; selected: boolean; onClick: () => void }) => (
+    <button onClick={onClick} style={{
+      flex: 1, padding: '9px 0', fontWeight: 800, fontSize: 14,
+      background: selected ? 'linear-gradient(135deg,#f5c400 0%,#d4a000 100%)' : 'rgba(255,255,255,0.05)',
+      color: selected ? '#111' : '#999',
+      border: `1px solid ${selected ? 'transparent' : 'rgba(255,255,255,0.1)'}`,
+      borderRadius: 50, cursor: 'pointer', letterSpacing: 1,
+      boxShadow: selected ? '0 2px 12px rgba(245,196,0,0.35)' : 'none',
+      transition: 'all 0.15s',
+    }}>
+      {OUTCOME_LABEL[outcome]}
+    </button>
+  )
+
+  if (isLoading || !ready) return (
+    <div style={{ background: BG, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: GOLD, fontSize: 16, fontWeight: 700 }}>
+      Se incarca meciurile...
+    </div>
+  )
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: BG, fontFamily: "'Inter', system-ui, sans-serif" }}>
+      {/* Header */}
+      <div style={{ background: 'linear-gradient(135deg, #b87800 0%, #7a4e00 50%, #3d2800 100%)', padding: '14px 24px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid rgba(245,196,0,0.15)' }}>
+        <div style={{ width: 38, height: 38, borderRadius: 10, background: 'linear-gradient(135deg,#f5c400,#b87800)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, boxShadow: '0 4px 12px rgba(245,196,0,0.4)' }}>⚽</div>
+        <div>
+          <div style={{ fontWeight: 900, fontSize: 18, color: '#fff', letterSpacing: 1 }}>FORTUNA</div>
+          <div style={{ fontSize: 11, color: DIM, marginTop: 1 }}>FIFA World Cup 2026 · 104 meciuri</div>
+        </div>
+        <div style={{ marginLeft: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+          <span style={{ background: 'rgba(245,196,0,0.1)', color: GOLD, border: '1px solid rgba(245,196,0,0.2)', borderRadius: 20, fontSize: 11, fontWeight: 700, padding: '4px 12px', letterSpacing: 0.5 }}>+3 pct rezultat ghicit</span>
+          <span style={{ fontSize: 10, color: '#555' }}>portofoliu demo — date reale WC2026</span>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div style={{ display: 'flex', background: '#0f0f0f', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '0 16px' }}>
+        {([{ id: 'matches' as const, label: 'Meciuri' }, { id: 'my' as const, label: `Biletele mele (${myBets.length})` }]).map(({ id, label }) => (
+          <button key={id} onClick={() => setTab(id)} style={{ padding: '12px 20px', background: 'transparent', border: 'none', borderBottom: tab === id ? `2px solid ${GOLD}` : '2px solid transparent', color: tab === id ? '#fff' : DIM, fontWeight: tab === id ? 700 : 400, fontSize: 13, cursor: 'pointer', letterSpacing: 0.3 }}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Content */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '10px 48px' }}>
+        {tab === 'matches' && groups.length === 0 && (
+          <div style={{ textAlign: 'center', color: DIM, padding: 48, fontSize: 14 }}>
+            Niciun meci disponibil momentan.
+          </div>
+        )}
+        {tab === 'matches' && groups.map(({ day, matches: dayMatches }) => {
+          const d = new Date(day + 'T12:00:00')
+          const isToday = day === new Date().toISOString().slice(0, 10)
+          const dayLabel = d.toLocaleDateString('ro-RO', { weekday: 'long', day: 'numeric', month: 'long' })
+          return (
+            <div key={day} style={{ marginBottom: 16 }}>
+              <div style={{ ...gradientBorder, borderRadius: 16, overflow: 'hidden', marginBottom: 4, boxShadow: '0 0 24px rgba(245,196,0,0.08), 0 4px 32px rgba(0,0,0,0.6)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', background: isToday ? 'linear-gradient(90deg, rgba(245,196,0,0.12) 0%, rgba(245,196,0,0.03) 100%)' : 'rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(245,196,0,0.15)' }}>
+                  <span style={{ fontSize: 15 }}>{isToday ? '⚡' : '📅'}</span>
+                  <span style={{ color: isToday ? GOLD : '#bbb', fontWeight: 700, fontSize: 13, textTransform: 'capitalize', letterSpacing: 0.3 }}>{dayLabel}</span>
+                  {isToday && <span style={{ background: 'linear-gradient(135deg,#f5c400,#d4a000)', color: '#111', borderRadius: 20, fontSize: 10, padding: '2px 9px', fontWeight: 900 }}>AZI</span>}
+                  <span style={{ marginLeft: 'auto', color: '#444', fontSize: 11 }}>{dayMatches.length} meciuri</span>
+                </div>
+                {dayMatches.map((m, midx) => {
+                  const locked = isLocked(m)
+                  const hasBet = !!m.my_bet
+                  const localSel = selection[m.id]
+                  const activeSel = localSel ?? (hasBet ? m.my_bet!.predicted_outcome : undefined)
+                  const timeStr = new Date(m.scheduled_at).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })
+                  const finished = m.status === 'FINISHED'
+                  const live = m.status === 'IN_PLAY' || m.status === 'PAUSED'
+                  return (
+                    <div key={m.id} style={{ background: midx % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent', borderTop: midx > 0 ? '1px solid rgba(255,255,255,0.05)' : 'none', overflow: 'hidden' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 14px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                        <span style={{ color: '#555', fontSize: 11, letterSpacing: 0.3 }}>
+                          {m.group ? `${m.group} · ` : ''}{new Date(m.scheduled_at).toLocaleDateString('ro-RO', { day: '2-digit', month: 'short', year: 'numeric' })} · {timeStr}
+                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          {live && <span style={{ background: '#cc0000', color: '#fff', borderRadius: 3, fontSize: 10, padding: '1px 6px', fontWeight: 800, letterSpacing: 1 }}>LIVE</span>}
+                          {finished && <span style={{ color: DIM, fontSize: 11, fontWeight: 600 }}>Final</span>}
+                          {hasBet && !finished && <span style={{ background: '#2a2000', color: GOLD, borderRadius: 3, fontSize: 10, padding: '1px 6px', fontWeight: 700 }}>BILET PLASAT</span>}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', padding: '10px 14px', gap: 8 }}>
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
+                          <span style={{ fontSize: 26 }}>{teamFlag(m.home_team_code)}</span>
+                          <span style={{ fontWeight: 800, fontSize: 14, color: finished && m.result === 'home_win' ? GOLD : '#eee' }}>{m.home_team_code ?? m.home_team}</span>
+                        </div>
+                        <div style={{ textAlign: 'center', minWidth: 70 }}>
+                          {finished ? (
+                            <span style={{ fontWeight: 900, fontSize: 22, color: GOLD, letterSpacing: 2 }}>{m.home_score} - {m.away_score}</span>
+                          ) : (
+                            <span style={{ fontWeight: 700, fontSize: 16, color: DIM }}>VS</span>
+                          )}
+                        </div>
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+                          <span style={{ fontSize: 26 }}>{teamFlag(m.away_team_code)}</span>
+                          <span style={{ fontWeight: 800, fontSize: 14, color: finished && m.result === 'away_win' ? GOLD : '#eee' }}>{m.away_team_code ?? m.away_team}</span>
+                        </div>
+                      </div>
+                      {!locked && (
+                        <div style={{ padding: '0 14px 14px' }}>
+                          <div style={{ display: 'flex', gap: 8, marginBottom: localSel && localSel !== m.my_bet?.predicted_outcome ? 10 : 0 }}>
+                            {(['home_win', 'draw', 'away_win'] as WCOutcome[]).filter((o) => o !== 'draw' || m.stage === 'GROUP_STAGE').map((o) => (
+                              <OutcomeBtn key={o} outcome={o} selected={activeSel === o} onClick={() => setSelection((prev) => ({ ...prev, [m.id]: o }))} />
+                            ))}
+                          </div>
+                          {localSel && (!hasBet || localSel !== m.my_bet!.predicted_outcome) && (
+                            <button
+                              onClick={() => hasBet
+                                ? updateBet.mutate({ bet_id: m.my_bet!.id, predicted_outcome: localSel })
+                                : placeBet.mutate({ match_id: m.id, predicted_outcome: localSel })
+                              }
+                              disabled={placeBet.isPending || updateBet.isPending}
+                              style={{ width: '100%', padding: '11px 0', background: 'linear-gradient(135deg,#f5c400 0%,#d4a000 100%)', color: '#111', border: 'none', borderRadius: 50, fontWeight: 900, fontSize: 14, cursor: 'pointer', letterSpacing: 1, boxShadow: '0 4px 20px rgba(245,196,0,0.35)' }}
+                            >
+                              {hasBet ? 'SALVEAZA' : 'PARIEAZA'}
+                            </button>
+                          )}
+                          {hasBet && !localSel && (
+                            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 4 }}>
+                              <button onClick={() => deleteBet.mutate(m.my_bet!.id)} disabled={deleteBet.isPending}
+                                style={{ fontSize: 11, color: '#555', background: 'none', border: 'none', cursor: 'pointer' }}>
+                                Sterge pariul
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {locked && hasBet && m.my_bet && (
+                        <div style={{ padding: '8px 14px 14px', textAlign: 'center' }}>
+                          <span style={{ display: 'inline-block', borderRadius: 50, padding: '5px 18px', fontWeight: 700, fontSize: 12, letterSpacing: 0.5, background: m.my_bet.points_earned === 3 ? 'rgba(139,195,74,0.1)' : m.my_bet.points_earned === 0 ? 'rgba(239,83,80,0.1)' : 'rgba(245,196,0,0.08)', color: m.my_bet.points_earned === 3 ? '#8bc34a' : m.my_bet.points_earned === 0 ? '#ef5350' : GOLD, border: `1px solid ${m.my_bet.points_earned === 3 ? 'rgba(139,195,74,0.3)' : m.my_bet.points_earned === 0 ? 'rgba(239,83,80,0.3)' : 'rgba(245,196,0,0.2)'}` }}>
+                            {OUTCOME_FULL[m.my_bet.predicted_outcome]}
+                            {m.my_bet.points_earned === 3 && '  ✓ +3 pct'}
+                            {m.my_bet.points_earned === 0 && '  ✗ +0 pct'}
+                            {m.my_bet.points_earned === null && '  · in asteptare'}
+                          </span>
+                        </div>
+                      )}
+                      {locked && !hasBet && (
+                        <div style={{ padding: '6px 14px 12px', textAlign: 'center', color: '#333', fontSize: 11, letterSpacing: 0.5 }}>pariuri inchise</div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })}
+
+        {tab === 'my' && (
+          <>
+            {myBets.length === 0 && <div style={{ textAlign: 'center', color: DIM, padding: 48, fontSize: 14 }}>Nu ai pariuri plasate inca.</div>}
+            {myBets.map((m) => {
+              const bet = m.my_bet!
+              const date = new Date(m.scheduled_at)
+              const pts = bet.points_earned
+              return (
+                <div key={m.id} style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 10, marginBottom: 8, border: `1px solid ${pts === 3 ? '#3a4a00' : pts === 0 ? '#3a0000' : BORDER}`, overflow: 'hidden' }}>
+                  <div style={{ padding: '10px 14px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, fontSize: 14, color: '#eee' }}>
+                        <span style={{ fontSize: 20 }}>{teamFlag(m.home_team_code)}</span>
+                        {m.home_team_code ?? m.home_team}
+                        <span style={{ color: '#444' }}>—</span>
+                        <span style={{ fontSize: 20 }}>{teamFlag(m.away_team_code)}</span>
+                        {m.away_team_code ?? m.away_team}
+                      </div>
+                      <span style={{ color: DIM, fontSize: 11 }}>{date.toLocaleDateString('ro-RO', { day: '2-digit', month: 'short' })} {date.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ background: 'rgba(245,196,0,0.08)', color: GOLD, border: '1px solid rgba(245,196,0,0.2)', borderRadius: 20, fontSize: 11, padding: '3px 12px', fontWeight: 700 }}>
+                        {OUTCOME_FULL[bet.predicted_outcome]}
+                      </span>
+                      <span style={{ fontWeight: 800, fontSize: 14, color: pts === 3 ? '#8bc34a' : pts === 0 ? '#ef5350' : DIM }}>
+                        {pts === 3 ? '+3 pct ✓' : pts === 0 ? '+0 pct ✗' : 'in asteptare'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ─── Admin Panel content ───────────────────────────────────────────────────
 
 type AdminSection = 'session' | 'meciuri' | 'players_cs' | 'teams_cs' | 'users' | 'logs' | 'database'
@@ -1095,13 +1385,14 @@ function DesktopIcon({ icon, label, onClick }: { icon: string; label: string; on
 
 // ─── Main Desktop ──────────────────────────────────────────────────────────
 
-type WindowId = 'cs2' | 'betting' | 'admin'
+type WindowId = 'cs2' | 'betting' | 'fortuna' | 'admin'
 interface WinState { open: boolean; minimized: boolean }
 
 export default function Desktop() {
   const [wins, setWins] = useState<Record<WindowId, WinState>>({
     cs2:     { open: false, minimized: false },
     betting: { open: false, minimized: false },
+    fortuna: { open: false, minimized: false },
     admin:   { open: false, minimized: false },
   })
   const [clock, setClock] = useState(new Date())
@@ -1134,6 +1425,7 @@ export default function Desktop() {
       <div className="absolute top-4 left-8 flex flex-col gap-2 pt-4">
         <DesktopIcon icon="/cs2_icon.png" label="CS2 Scoreboard" onClick={() => openWin('cs2')} />
         <DesktopIcon icon="/casapariurilor_icon.jpg" label="Casa Pariurilor" onClick={() => openWin('betting')} />
+        <DesktopIcon icon="/fortuna_icon.png" label="Fortuna WC2026" onClick={() => openWin('fortuna')} />
       </div>
 
       {/* Ivan popup */}
@@ -1253,6 +1545,7 @@ export default function Desktop() {
           {([
             { key: 'cs2' as WindowId, label: 'CS2 Scoreboard', img: '/cs2_icon.png' },
             { key: 'betting' as WindowId, label: 'Casa Pariurilor', img: '/casapariurilor_icon.jpg' },
+            { key: 'fortuna' as WindowId, label: 'Fortuna WC2026', img: '/fortuna_icon.png' },
             { key: 'admin' as WindowId, label: 'Admin Panel', img: '/win11_logo.png' },
           ]).filter(w => wins[w.key].open).map(w => {
             const minimized = wins[w.key].minimized
@@ -1288,6 +1581,14 @@ export default function Desktop() {
         <div style={{ display: wins.betting.minimized ? 'none' : undefined }}>
           <DesktopWindow title="Casa Pariurilor" imgSrc="/casapariurilor_icon.jpg" onClose={() => closeWin('betting')} onMinimize={() => minimizeWin('betting')} maxWidth="600px">
             <BettingContent />
+          </DesktopWindow>
+        </div>
+      )}
+
+      {wins.fortuna.open && (
+        <div style={{ display: wins.fortuna.minimized ? 'none' : undefined }}>
+          <DesktopWindow title="Fortuna — FIFA World Cup 2026" imgSrc="/fortuna_icon.png" onClose={() => closeWin('fortuna')} onMinimize={() => minimizeWin('fortuna')} maxWidth="700px">
+            <FortunaContent />
           </DesktopWindow>
         </div>
       )}

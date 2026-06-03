@@ -125,6 +125,37 @@ export const dummyBackups = [
   { filename: 'backup_2025-05-20_2200.json', size_kb: 98, created_at: '2025-05-20T22:00:00Z' },
 ]
 
+export type WCOutcome = 'home_win' | 'away_win' | 'draw'
+
+export interface WorldCupMatch {
+  id: number
+  home_team: string
+  away_team: string
+  home_team_code: string | null
+  away_team_code: string | null
+  scheduled_at: string
+  stage: string | null
+  group: string | null
+  status: string
+  home_score: number | null
+  away_score: number | null
+  result: WCOutcome | null
+  my_bet: { id: number; predicted_outcome: WCOutcome; points_earned: number | null } | null
+}
+
+export const dummyWCMatches: WorldCupMatch[] = [
+  { id: 1, home_team: 'Argentina', away_team: 'Canada', home_team_code: 'ARG', away_team_code: 'CAN', scheduled_at: '2026-06-11T20:00:00Z', stage: 'GROUP_STAGE', group: 'Grupa A', status: 'FINISHED', home_score: 3, away_score: 0, result: 'home_win', my_bet: { id: 1, predicted_outcome: 'home_win', points_earned: 3 } },
+  { id: 2, home_team: 'France', away_team: 'Mexico', home_team_code: 'FRA', away_team_code: 'MEX', scheduled_at: '2026-06-11T23:00:00Z', stage: 'GROUP_STAGE', group: 'Grupa B', status: 'FINISHED', home_score: 2, away_score: 1, result: 'home_win', my_bet: null },
+  { id: 3, home_team: 'Brazil', away_team: 'Germany', home_team_code: 'BRA', away_team_code: 'GER', scheduled_at: '2026-06-12T20:00:00Z', stage: 'GROUP_STAGE', group: 'Grupa C', status: 'FINISHED', home_score: 1, away_score: 1, result: 'draw', my_bet: { id: 2, predicted_outcome: 'home_win', points_earned: 0 } },
+  { id: 4, home_team: 'Spain', away_team: 'Morocco', home_team_code: 'ESP', away_team_code: 'MAR', scheduled_at: '2026-06-12T23:00:00Z', stage: 'GROUP_STAGE', group: 'Grupa D', status: 'FINISHED', home_score: 2, away_score: 0, result: 'home_win', my_bet: null },
+  { id: 5, home_team: 'England', away_team: 'USA', home_team_code: 'ENG', away_team_code: 'USA', scheduled_at: '2026-06-13T20:00:00Z', stage: 'GROUP_STAGE', group: 'Grupa E', status: 'FINISHED', home_score: 0, away_score: 1, result: 'away_win', my_bet: { id: 3, predicted_outcome: 'away_win', points_earned: 3 } },
+  { id: 6, home_team: 'Portugal', away_team: 'Japan', home_team_code: 'POR', away_team_code: 'JPN', scheduled_at: '2026-06-14T17:00:00Z', stage: 'GROUP_STAGE', group: 'Grupa F', status: 'SCHEDULED', home_score: null, away_score: null, result: null, my_bet: null },
+  { id: 7, home_team: 'Netherlands', away_team: 'Senegal', home_team_code: 'NED', away_team_code: 'SEN', scheduled_at: '2026-06-14T20:00:00Z', stage: 'GROUP_STAGE', group: 'Grupa G', status: 'SCHEDULED', home_score: null, away_score: null, result: null, my_bet: null },
+  { id: 8, home_team: 'Uruguay', away_team: 'Korea', home_team_code: 'URY', away_team_code: 'KOR', scheduled_at: '2026-06-14T23:00:00Z', stage: 'GROUP_STAGE', group: 'Grupa H', status: 'SCHEDULED', home_score: null, away_score: null, result: null, my_bet: null },
+  { id: 9, home_team: 'Argentina', away_team: 'Mexico', home_team_code: 'ARG', away_team_code: 'MEX', scheduled_at: '2026-06-18T23:00:00Z', stage: 'GROUP_STAGE', group: 'Grupa A', status: 'TIMED', home_score: null, away_score: null, result: null, my_bet: null },
+  { id: 10, home_team: 'France', away_team: 'Germany', home_team_code: 'FRA', away_team_code: 'GER', scheduled_at: '2026-06-19T20:00:00Z', stage: 'GROUP_STAGE', group: 'Grupa B', status: 'TIMED', home_score: null, away_score: null, result: null, my_bet: null },
+]
+
 export const dummyDbBackups = [
   { filename: 'db_backup_2025-05-28.sqlite', size_kb: 512, created_at: '2025-05-28T22:00:00Z' },
   { filename: 'db_backup_2025-05-25.sqlite', size_kb: 487, created_at: '2025-05-25T22:00:00Z' },
