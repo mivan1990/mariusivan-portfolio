@@ -6,6 +6,21 @@ from models import Player, PlayerMatchStat, Match
 router = APIRouter(prefix="/api/players", tags=["players"])
 
 
+@router.get("")
+def list_players(db: Session = Depends(get_db)):
+    players = db.query(Player).order_by(Player.real_name).all()
+    return [
+        {
+            "id": p.id,
+            "steam_nickname": p.steam_nickname,
+            "real_name": p.real_name,
+            "team_name": p.team_name,
+            "avatar_url": p.avatar_url,
+        }
+        for p in players
+    ]
+
+
 @router.get("/{player_id}")
 def get_player(player_id: int, db: Session = Depends(get_db)):
     player = db.query(Player).filter(Player.id == player_id).first()
@@ -34,6 +49,13 @@ def get_player(player_id: int, db: Session = Depends(get_db)):
                 "adr": round(stat.damage / max(stat.rounds_played, 1), 1),
                 "kd_ratio": round(stat.kills / max(stat.deaths, 1), 2),
                 "mvps": stat.mvps,
+                "kills_2k": stat.kills_2k,
+                "kills_3k": stat.kills_3k,
+                "kills_4k": stat.kills_4k,
+                "kills_5k": stat.kills_5k,
+                "utility_damage": stat.utility_damage,
+                "clutch_1v1_wins": stat.clutch_1v1_wins,
+                "entry_wins": stat.entry_wins,
             })
 
     total_kills = sum(s.kills for s in stats)
@@ -47,6 +69,7 @@ def get_player(player_id: int, db: Session = Depends(get_db)):
     return {
         "id": player.id,
         "steam_account_id": player.steam_account_id,
+        "steam_id64": player.steam_id64,
         "steam_nickname": player.steam_nickname,
         "real_name": player.real_name,
         "team_name": player.team_name,
