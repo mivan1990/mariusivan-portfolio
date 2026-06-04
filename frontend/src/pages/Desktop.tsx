@@ -3508,7 +3508,7 @@ function DesktopIcon({ icon, label, onClick, onContextMenu }: { icon: string; la
 
 // --- Main Desktop ---
 
-type WindowId = 'cs2' | 'betting' | 'fortuna' | 'admin' | 'youtube'
+type WindowId = 'cs2' | 'betting' | 'fortuna' | 'admin' | 'youtube' | 'readme'
 interface WinState { open: boolean; minimized: boolean }
 
 export default function Desktop() {
@@ -3519,6 +3519,7 @@ export default function Desktop() {
     fortuna: { open: false, minimized: false },
     admin:   { open: false, minimized: false },
     youtube: { open: false, minimized: false },
+    readme:  { open: false, minimized: false },
   })
   const [user, setUser] = useState<UserInfo | null>(null)
   const [clock, setClock] = useState(new Date())
@@ -3643,18 +3644,36 @@ export default function Desktop() {
       )}
 
       {/* Desktop icons */}
-      <div className="absolute left-8 flex flex-col gap-2 pt-4" style={{ top: generalMessage ? '80px' : '16px' }}>
-        <DesktopIcon icon="/cs2_icon.png" label="CS2 Scoreboard" onClick={() => openWin('cs2')} />
-        <DesktopIcon icon="/casapariurilor_icon.jpg" label="Casa Pariurilor" onClick={() => openWin('betting')} />
-        <DesktopIcon icon="/Youtube_logo.png" label="YouTube" onClick={() => openWin('youtube')} onContextMenu={(e) => {
-          if (isAdmin) {
-            e.preventDefault()
-            setContextMenu({ x: e.clientX, y: e.clientY })
-          }
-        }} />
-        {window.location.hostname === 'localhost' && (
-          <DesktopIcon icon="/ftn_logo.png" label="Fortuna WC2026" onClick={() => openWin('fortuna')} />
-        )}
+      <div className="absolute left-8 flex flex-col pt-4" style={{ top: generalMessage ? '80px' : '16px' }}>
+
+        {/* Grup FEG */}
+        <div className="flex flex-col gap-2">
+          <div className="text-center text-xs select-none px-1 py-0.5 rounded"
+            style={{ color: 'rgba(255,255,255,0.55)', fontSize: '10px', letterSpacing: '0.08em', textShadow: '0 1px 3px rgba(0,0,0,0.9)', background: 'rgba(0,0,0,0.25)' }}>
+            ─ FEG Project ─
+          </div>
+          <DesktopIcon icon="/readme_icon.svg" label="README.txt" onClick={() => openWin('readme')} />
+          <DesktopIcon icon="/cs2_icon.png" label="CS2 Scoreboard" onClick={() => openWin('cs2')} />
+          <DesktopIcon icon="/casapariurilor_icon.jpg" label="Casa Pariurilor" onClick={() => openWin('betting')} />
+        </div>
+
+        {/* Separator */}
+        <div style={{ height: '16px' }} />
+
+        {/* Alte iconite */}
+        <div className="flex flex-col gap-2">
+          <DesktopIcon icon="/numlock.png" label="Numlock.ro" onClick={() => window.open('https://numlock.ro', '_blank')} />
+          <DesktopIcon icon="/Youtube_logo.png" label="YouTube" onClick={() => openWin('youtube')} onContextMenu={(e) => {
+            if (isAdmin) {
+              e.preventDefault()
+              setContextMenu({ x: e.clientX, y: e.clientY })
+            }
+          }} />
+          {window.location.hostname === 'localhost' && (
+            <DesktopIcon icon="/ftn_logo.png" label="Fortuna WC2026" onClick={() => openWin('fortuna')} />
+          )}
+        </div>
+
       </div>
 
       {/* Context menu for YouTube */}
@@ -4069,6 +4088,89 @@ export default function Desktop() {
         <div style={{ display: wins.youtube.minimized ? 'none' : undefined }}>
           <DesktopWindow title="YouTube" imgSrc="/Youtube_logo.png" onClose={() => closeWin('youtube')} onMinimize={() => minimizeWin('youtube')}>
             <YouTubeContent link={youtubeLink} />
+          </DesktopWindow>
+        </div>
+      )}
+
+      {wins.readme.open && (
+        <div style={{ display: wins.readme.minimized ? 'none' : undefined }}>
+          <DesktopWindow title="CS2 & Pariuri — README.txt — Notepad" imgSrc="/readme_icon.svg" onClose={() => closeWin('readme')} onMinimize={() => minimizeWin('readme')} maxWidth="680px">
+            <div style={{ height: '100%', overflowY: 'auto', background: 'white', padding: '16px 20px', fontFamily: 'Courier New, monospace', fontSize: '13px', lineHeight: '1.7', color: '#111' }}>
+              <pre style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{`================================================================
+  CS2 SCOREBOARD + CASA PARIURILOR — Documentatie proiect
+================================================================
+
+DESPRE PROIECT
+--------------
+CS2 Scoreboard si Casa Pariurilor fac parte din aceeasi
+aplicatie: o platforma interna de competitie 2v2 Counter-Strike 2
+construita pentru angajatii FEG.
+
+Platforma ruleaza pe o masina Windows locala din sediul FEG,
+conectata direct la serverul CS2.
+
+Proiectul are 3 componente principale accesibile din acest
+desktop:
+
+  [1] CS2 Scoreboard
+  [2] Casa Pariurilor
+  [3] Admin Panel
+
+
+[1] CS2 SCOREBOARD
+------------------
+Afiseaza statisticile live si istoricul competitiei:
+
+  • Jucatori   — clasament cu K/D, ADR, HS%, MVPs, Win Rate
+  • Echipe     — clasament echipe cu puncte, victorii, round diff
+  • Live       — statistici in timp real din meciul curent
+  • Meciuri    — toate meciurile jucate cu statistici complete
+                 (K/D/A, damage, first kills, clutches etc.)
+  • Bracket    — tabloul eliminatoriu al turneului
+
+Datele vin automat din plugin-ul CS2 instalat pe server,
+prin Game State Integration (GSI).
+
+
+[2] CASA PARIURILOR
+-------------------
+Sistem de pariuri pe meciurile programate:
+
+  • Pariuri pe echipe  — prezici castigatorul meciului
+  • Pariuri pe jucator — prezici top fragger-ul meciului
+  • Cotele             — calculate automat pe baza K/D,
+                         Win Rate si ADR al fiecarui jucator
+  • Clasament pariuri  — punctaj acumulat de fiecare jucator
+                         (3 pct victorie, 1 pct egal, 0 pct pierdut)
+
+Pariurile se blocheaza automat la ora meciului.
+
+
+[3] LEGATURA PRIN ADMIN PANEL
+------------------------------
+Adminul controleaza ambele aplicatii dintr-un singur panou:
+
+  Sesiune live    — porneste/opreste captura datelor CS2
+  Meciuri         — programeaza meciuri viitoare, seteaza
+                    castigatori (activeaza procesarea pariurilor)
+  Jucatori CS     — adauga/editeaza jucatori, echipe, avatare
+  Utilizatori     — gestioneaza conturile de pariuri
+  Loguri          — istoric complet al actiunilor din platforma
+  Baza de date    — backup/restore
+
+
+STACK TEHNIC
+------------
+  Frontend  : React + TypeScript + Vite + Tailwind CSS
+  Backend   : Python FastAPI + SQLite
+  Plugin CS2: C# (Game State Integration)
+  Hosting   : VPS Ubuntu + nginx + Let's Encrypt
+
+
+================================================================
+  github.com/mivan1990
+================================================================`}</pre>
+            </div>
           </DesktopWindow>
         </div>
       )}
