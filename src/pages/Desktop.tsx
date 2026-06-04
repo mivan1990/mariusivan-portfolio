@@ -1425,7 +1425,7 @@ export default function Desktop() {
       <div className="absolute top-4 left-8 flex flex-col gap-2 pt-4">
         <DesktopIcon icon="/cs2_icon.png" label="CS2 Scoreboard" onClick={() => openWin('cs2')} />
         <DesktopIcon icon="/casapariurilor_icon.jpg" label="Casa Pariurilor" onClick={() => openWin('betting')} />
-        <DesktopIcon icon="/fortuna_icon.png" label="Fortuna WC2026" onClick={() => openWin('fortuna')} />
+        <DesktopIcon icon="/ftn_logo.png" label="Fortuna WC2026" onClick={() => openWin('fortuna')} />
       </div>
 
       {/* Ivan popup */}
@@ -1545,7 +1545,7 @@ export default function Desktop() {
           {([
             { key: 'cs2' as WindowId, label: 'CS2 Scoreboard', img: '/cs2_icon.png' },
             { key: 'betting' as WindowId, label: 'Casa Pariurilor', img: '/casapariurilor_icon.jpg' },
-            { key: 'fortuna' as WindowId, label: 'Fortuna WC2026', img: '/fortuna_icon.png' },
+            { key: 'fortuna' as WindowId, label: 'Fortuna WC2026', img: '/ftn_logo.png' },
             { key: 'admin' as WindowId, label: 'Admin Panel', img: '/win11_logo.png' },
           ]).filter(w => wins[w.key].open).map(w => {
             const minimized = wins[w.key].minimized
@@ -1587,7 +1587,7 @@ export default function Desktop() {
 
       {wins.fortuna.open && (
         <div style={{ display: wins.fortuna.minimized ? 'none' : undefined }}>
-          <DesktopWindow title="Fortuna — FIFA World Cup 2026" imgSrc="/fortuna_icon.png" onClose={() => closeWin('fortuna')} onMinimize={() => minimizeWin('fortuna')} maxWidth="700px">
+          <DesktopWindow title="Fortuna — FIFA World Cup 2026" imgSrc="/ftn_logo.png" onClose={() => closeWin('fortuna')} onMinimize={() => minimizeWin('fortuna')} maxWidth="700px">
             <FortunaContent />
           </DesktopWindow>
         </div>
