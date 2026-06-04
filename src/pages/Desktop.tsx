@@ -258,7 +258,7 @@ function InlineMatchDetail({ matchId, onBack }: { matchId: number; onBack: () =>
 }
 
 function CS2Content() {
-  const [view, setView] = useState<'players' | 'teams' | 'meciuri' | 'bracket'>('players')
+  const [view, setView] = useState<'players' | 'teams' | 'live' | 'meciuri' | 'bracket'>('players')
   const [selectedMatchId, setSelectedMatchId] = useState<number | null>(null)
 
   const players = dummyPlayers
@@ -285,22 +285,25 @@ function CS2Content() {
       <div className="flex items-center gap-0 sticky top-0 z-10" style={{ background: CS2_HEADER_BG, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
         {([
           ['players', 'Jucatori'],
+          ['live',    'Live'],
           ['meciuri', 'Meciuri'],
           ['bracket', 'Bracket'],
         ] as const).map(([key, label]) => (
           <button
             key={key}
             onClick={() => { setView(key); setSelectedMatchId(null) }}
-            className="px-6 py-3 text-sm font-semibold transition-colors tracking-wide uppercase"
+            className="px-6 py-3 text-sm font-semibold transition-colors tracking-wide uppercase flex items-center gap-2"
             style={{
               color: view === key ? '#f5c040' : 'rgba(255,255,255,0.35)',
-              borderBottom: view === key ? '2px solid #f5c040' : '2px solid transparent',
               letterSpacing: '0.08em',
               background: 'none', border: 'none', cursor: 'pointer',
               borderBottomWidth: '2px', borderBottomStyle: 'solid',
               borderBottomColor: view === key ? '#f5c040' : 'transparent',
             }}
           >
+            {key === 'live' && (
+              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: 'rgba(255,255,255,0.2)' }} />
+            )}
             {label}
           </button>
         ))}
@@ -312,6 +315,18 @@ function CS2Content() {
           <ColHeader />
           {players.map((p, idx) => <PlayerRow key={p.id} p={p} rank={idx + 1} />)}
         </>
+      )}
+
+      {/* LIVE */}
+      {view === 'live' && (
+        <div className="p-4">
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <div className="w-3 h-3 rounded-full" style={{ background: 'rgba(255,255,255,0.2)' }} />
+            <div className="text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>
+              Niciun meci live in acest moment.
+            </div>
+          </div>
+        </div>
       )}
 
       {/* TEAMS */}
@@ -556,7 +571,7 @@ function calcOdds(kd: number, winRate: number, adr: number): number {
 }
 
 function BettingContent() {
-  const [tab, setTab] = useState<'available' | 'leaderboard'>('available')
+  const [tab, setTab] = useState<'available' | 'history' | 'leaderboard'>('available')
   const [matchBetTab, setMatchBetTab] = useState<Record<number, 'echipe' | 'jucatori'>>({})
   const [teamSelection, setTeamSelection] = useState<Record<number, 'team_a' | 'team_b'>>({})
   const [playerSelection, setPlayerSelection] = useState<Record<number, number>>({})
@@ -572,16 +587,16 @@ function BettingContent() {
       <div style={{ background: '#C62828', padding: '10px 16px 0', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
           <div className="flex gap-1">
-            {(['available', 'leaderboard'] as const).map((t) => {
-              const label = t === 'available' ? 'Pariuri disponibile' : 'Clasament Pariuri'
-              return (
-                <button key={t} onClick={() => setTab(t)} style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 600, borderRadius: '8px 8px 0 0', border: 'none', cursor: 'pointer', background: tab === t ? '#fff' : 'transparent', color: tab === t ? '#B71C1C' : 'rgba(255,255,255,0.75)', transition: 'all 0.15s' }}>
-                  {label}
-                </button>
-              )
-            })}
+            {([
+              { key: 'available' as const, label: 'Pariuri disponibile' },
+              { key: 'history' as const, label: `Biletele mele${Object.keys(placedBets).length > 0 ? ` (${Object.keys(placedBets).length})` : ''}` },
+              { key: 'leaderboard' as const, label: 'Top Utilizatori' },
+            ]).map(({ key, label }) => (
+              <button key={key} onClick={() => setTab(key)} style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 600, borderRadius: '8px 8px 0 0', border: 'none', cursor: 'pointer', background: tab === key ? '#fff' : 'transparent', color: tab === key ? '#B71C1C' : 'rgba(255,255,255,0.75)', transition: 'all 0.15s' }}>
+                {label}
+              </button>
+            ))}
           </div>
-          <div style={{ paddingBottom: '6px', fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>Demo</div>
         </div>
       </div>
 
@@ -691,6 +706,40 @@ function BettingContent() {
                       )}
                     </div>
                   )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Biletele mele */}
+        {tab === 'history' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {Object.keys(placedBets).length === 0 && (
+              <div style={{ textAlign: 'center', padding: '48px 0', color: '#888' }}>
+                <div style={{ fontSize: '36px', marginBottom: '8px' }}>🎫</div>
+                <div style={{ fontWeight: 600, color: '#444', marginBottom: '4px' }}>Niciun pariu plasat</div>
+                <div style={{ fontSize: '13px' }}>Pariurile tale apar dupa ce pariezi pe meciuri.</div>
+              </div>
+            )}
+            {Object.entries(placedBets).map(([smId, bet]) => {
+              const sm = dummyScheduled.find((s) => s.id === Number(smId))
+              if (!sm) return null
+              const label = bet.type === 'team'
+                ? (bet.value === 'team_a' ? sm.team_a : sm.team_b)
+                : dummyPlayers.find((p) => p.id === Number(bet.value))?.real_name ?? dummyPlayers.find((p) => p.id === Number(bet.value))?.steam_nickname ?? '—'
+              return (
+                <div key={smId} style={{ background: '#fff', borderRadius: '10px', padding: '12px 14px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <div style={{ fontSize: '13px', fontWeight: 700, color: '#1a1a1a', marginBottom: 2 }}>{sm.team_a} vs {sm.team_b}</div>
+                    <div style={{ fontSize: '11px', color: '#999' }}>
+                      {new Date(sm.scheduled_at).toLocaleDateString('ro-RO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ background: '#FDD835', color: '#000', fontSize: '12px', fontWeight: 700, padding: '3px 10px', borderRadius: '20px' }}>{label}</span>
+                    <button onClick={() => setPlacedBets((prev) => { const n = { ...prev }; delete n[Number(smId)]; return n })} style={{ fontSize: '11px', color: '#999', background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}>✕</button>
+                  </div>
                 </div>
               )
             })}
