@@ -66,6 +66,10 @@ export interface MatchSummary {
   team2_score: number
   team1_name: string | null
   team2_name: string | null
+  first_half_team1?: number
+  first_half_team2?: number
+  second_half_team1?: number
+  second_half_team2?: number
   players: MatchPlayer[]
 }
 

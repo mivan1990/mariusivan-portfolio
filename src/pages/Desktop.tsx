@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, type ReactNode } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { dummyPlayers, dummyTeams, dummyMatches, dummyScheduled, dummyAdminTeams, dummyAdminUsers, dummyLogs, dummyBackups, dummyDbBackups } from '../data/dummyData'
-import type { LeaderboardPlayer, ScheduledMatch, MatchPlayer } from '../data/types'
+import { dummyPlayers, dummyScheduled, dummyAdminTeams, dummyAdminUsers, dummyLogs, dummyBackups, dummyDbBackups } from '../data/dummyData'
 import { api, ensureGuestSession } from '../api/client'
 
 type WCOutcome = 'home_win' | 'away_win' | 'draw'
@@ -120,12 +119,13 @@ const TEAM_PALETTE = [
 const ROW_BLUE = '#7ab8ff'
 const ROW_GOLD = '#f5c040'
 
-function PlayerRow({ p, rank }: { p: LeaderboardPlayer; rank: number }) {
+function PlayerRow({ p, rank, onClick }: { p: { id: number; steam_nickname: string; real_name: string | null; team_name: string | null; avatar_url: string | null; matches_played: number; kills: number; deaths: number; assists: number; kd_ratio: number; hs_percent: number; adr: number; mvps: number }; rank: number; onClick?: () => void }) {
   const nameColor = rank % 2 === 1 ? ROW_BLUE : ROW_GOLD
   return (
     <div
       className="flex items-center select-none transition-colors"
-      style={{ background: 'rgba(255,255,255,0.055)', borderBottom: '1px solid rgba(0,0,0,0.35)', marginBottom: '2px', cursor: 'default' }}
+      style={{ background: 'rgba(255,255,255,0.055)', borderBottom: '1px solid rgba(0,0,0,0.35)', marginBottom: '2px', cursor: onClick ? 'pointer' : 'default' }}
+      onClick={onClick}
       onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.11)')}
       onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.055)')}
     >
@@ -181,47 +181,234 @@ function ColHeader() {
   )
 }
 
+function InlinePlayerProfile({ playerId, onBack, onMatchClick }: {
+  playerId: number
+  onBack: () => void
+  onMatchClick: (matchId: number) => void
+}) {
+  const { data: player, isLoading } = useQuery({
+    queryKey: ['player', playerId],
+    queryFn: () => api.get(`/api/players/${playerId}`).then((r) => r.data),
+  })
+
+  if (isLoading) return <div className="text-center py-16" style={{ color: 'rgba(255,255,255,0.3)' }}>Se incarca...</div>
+  if (!player) return <div className="text-center py-16 text-red-400">Jucatorul nu a fost gasit.</div>
+
+  const c = player.career
+  const matchHistory: Array<{
+    match_id: number; timestamp: string | null; map_name: string
+    team1_score: number; team2_score: number; won: boolean
+    kills: number; deaths: number; assists: number
+    hs_percent: number; adr: number; kd_ratio: number; mvps: number
+  }> = player.match_history ?? []
+
+  const GOLD = '#f5c040'
+  const DIM = 'rgba(255,255,255,0.4)'
+
+  return (
+    <div className="p-4 overflow-y-auto" style={{ height: '100%' }}>
+      <button onClick={onBack} className="text-xs mb-4 flex items-center gap-1"
+        style={{ color: DIM, background: 'none', border: 'none', cursor: 'pointer' }}
+        onMouseEnter={(e) => (e.currentTarget.style.color = GOLD)}
+        onMouseLeave={(e) => (e.currentTarget.style.color = DIM)}>
+        ← Inapoi la jucatori
+      </button>
+
+      {/* Header */}
+      <div className="rounded-lg p-4 mb-4" style={{ background: 'rgba(0,0,0,0.3)' }}>
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-sm flex items-center justify-center text-2xl font-black flex-shrink-0"
+            style={{ background: 'rgba(255,255,255,0.06)', color: GOLD }}>
+            {(player.real_name || player.steam_nickname).charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-white">{player.real_name || player.steam_nickname}</div>
+            {player.real_name && <div className="text-sm" style={{ color: DIM }}>{player.steam_nickname}</div>}
+            {player.team_name && (
+              <span className="text-xs px-2 py-0.5 rounded-full mt-1 inline-block"
+                style={{ background: 'rgba(245,192,64,0.1)', border: '1px solid rgba(245,192,64,0.3)', color: GOLD }}>
+                {player.team_name}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Main stats */}
+      <div className="grid grid-cols-4 gap-2 mb-2">
+        {[
+          { label: 'K/D Ratio', value: c.kd_ratio.toFixed(2), gold: true },
+          { label: 'ADR', value: c.adr.toFixed(1) },
+          { label: 'HS%', value: `${c.hs_percent}%` },
+          { label: 'Win Rate', value: `${c.win_rate}%` },
+        ].map(({ label, value, gold }) => (
+          <div key={label} className="rounded p-3 text-center" style={{ background: 'rgba(0,0,0,0.3)' }}>
+            <div className="text-xs mb-1" style={{ color: DIM }}>{label}</div>
+            <div className="font-black text-lg" style={{ color: gold ? GOLD : 'white' }}>{value}</div>
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-4 gap-2 mb-4">
+        {[
+          { label: 'Meciuri', value: c.matches_played },
+          { label: 'Victorii', value: c.wins },
+          { label: 'Kills', value: c.kills },
+          { label: 'MVPs', value: c.mvps },
+        ].map(({ label, value }) => (
+          <div key={label} className="rounded p-3 text-center" style={{ background: 'rgba(0,0,0,0.3)' }}>
+            <div className="text-xs mb-1" style={{ color: DIM }}>{label}</div>
+            <div className="font-black text-lg text-white">{value}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Advanced stats */}
+      <div className="rounded-lg p-4 mb-4" style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="text-xs uppercase font-bold mb-3" style={{ color: DIM, letterSpacing: '0.1em' }}>Stats Avansate</div>
+        <div className="grid grid-cols-2 gap-x-8 gap-y-1 text-sm">
+          {[
+            { label: 'Kills Totale', value: c.kills },
+            { label: 'Deaths Totale', value: c.deaths },
+            { label: 'Assists', value: c.assists },
+            { label: 'Headshot Kills', value: c.headshot_kills },
+            { label: 'Utility Damage', value: c.utility_damage },
+            { label: 'Entry Wins', value: c.entry_wins },
+            { label: 'Clutch 1v1', value: c.clutch_1v1_wins },
+          ].map(({ label, value }) => (
+            <div key={label} className="flex justify-between py-1.5 border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+              <span style={{ color: DIM }}>{label}</span>
+              <span className="text-white font-medium">{value}</span>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4">
+          <div className="text-xs mb-2" style={{ color: 'rgba(255,255,255,0.25)', letterSpacing: '0.08em' }}>Multi-Kill Rounds</div>
+          <div className="flex gap-6">
+            {[
+              { label: '2K', value: c.kills_2k, color: '#60a5fa' },
+              { label: '3K', value: c.kills_3k, color: '#c084fc' },
+              { label: '4K', value: c.kills_4k, color: '#fb923c' },
+              { label: '5K', value: c.kills_5k, color: '#f87171' },
+            ].map(({ label, value, color }) => (
+              <div key={label} className="text-center">
+                <div className="text-xl font-bold" style={{ color }}>{value}</div>
+                <div className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>{label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Match history */}
+      {matchHistory.length > 0 && (
+        <div>
+          <div className="text-xs uppercase font-bold mb-3" style={{ color: DIM, letterSpacing: '0.1em' }}>Istoric Meciuri</div>
+          <div className="space-y-2">
+            {matchHistory.map((m) => {
+              const date = m.timestamp
+                ? new Date(m.timestamp).toLocaleDateString('ro-RO', { day: '2-digit', month: 'short', year: 'numeric' })
+                : '—'
+              return (
+                <button key={m.match_id} onClick={() => onMatchClick(m.match_id)}
+                  className="w-full flex items-center justify-between rounded-lg px-4 py-3 text-left"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', cursor: 'pointer' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'rgba(245,192,64,0.35)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)')}>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded"
+                      style={{ background: m.won ? 'rgba(74,222,128,0.15)' : 'rgba(248,113,113,0.15)', border: `1px solid ${m.won ? 'rgba(74,222,128,0.3)' : 'rgba(248,113,113,0.3)'}`, color: m.won ? '#4ade80' : '#f87171' }}>
+                      {m.won ? 'W' : 'L'}
+                    </span>
+                    <span className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.5)' }}>{m.map_name}</span>
+                    <span className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>{date}</span>
+                    <span className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>{m.team1_score} — {m.team2_score}</span>
+                  </div>
+                  <div className="flex items-center gap-4 text-sm">
+                    <span>
+                      <span className="text-white font-medium">{m.kills}</span>
+                      <span style={{ color: 'rgba(255,255,255,0.3)' }}>/</span>
+                      <span className="text-red-400">{m.deaths}</span>
+                      <span style={{ color: 'rgba(255,255,255,0.3)' }}>/</span>
+                      <span style={{ color: 'rgba(255,255,255,0.5)' }}>{m.assists}</span>
+                    </span>
+                    <span className="hidden sm:block" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                      KD: <span className={m.kd_ratio >= 1 ? 'text-green-400' : 'text-red-400'}>{m.kd_ratio.toFixed(2)}</span>
+                    </span>
+                    <span className="hidden sm:block" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                      ADR: <span style={{ color: 'rgba(255,255,255,0.7)' }}>{m.adr.toFixed(1)}</span>
+                    </span>
+                    <span className="hidden sm:block" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                      HS: <span style={{ color: 'rgba(255,255,255,0.7)' }}>{m.hs_percent}%</span>
+                    </span>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function InlineMatchDetail({ matchId, onBack }: { matchId: number; onBack: () => void }) {
-  const match = dummyMatches.find((m) => m.id === matchId)
+  const { data: match, isLoading } = useQuery({
+    queryKey: ['match', matchId],
+    queryFn: () => api.get(`/api/matches/${matchId}`).then((r) => r.data),
+  })
+  if (isLoading) return <div className="text-center py-16" style={{ color: 'rgba(255,255,255,0.3)' }}>Se incarca...</div>
   if (!match) return <div className="text-center py-16 text-red-400">Meciul nu a fost gasit.</div>
 
-  type MP = MatchPlayer
-  const isSpectator = (p: MP) => p.kills === 0 && p.deaths === 0
-  const team1 = match.players.filter((p) => p.team === 1 && !isSpectator(p))
-  const team2 = match.players.filter((p) => p.team === 2 && !isSpectator(p))
+  const isSpectator = (p: { kills: number; deaths: number }) => p.kills === 0 && p.deaths === 0
+  const team1 = match.players.filter((p: { team: number; kills: number; deaths: number }) => p.team === 1 && !isSpectator(p))
+  const team2 = match.players.filter((p: { team: number; kills: number; deaths: number }) => p.team === 2 && !isSpectator(p))
   const t1Won = match.team1_score > match.team2_score
   const t2Won = match.team2_score > match.team1_score
   const date = match.timestamp
     ? new Date(match.timestamp).toLocaleDateString('ro-RO', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
     : null
 
-  const TeamTable = ({ players, palette }: { players: MP[]; palette: typeof TEAM_PALETTE[0] }) => (
-    <div className="mb-4">
+  const COLS = '1fr 72px 50px 48px 50px 56px 44px 44px 44px 44px'
+
+  const TeamTable = ({ players, palette }: { players: { id: number; name: string; steam_nickname: string; kills: number; deaths: number; assists: number; kd_ratio: number; hs_percent: number; adr: number; damage: number; mvps: number; utility_damage: number; first_kills: number; clutch_1v1_wins: number }[]; palette: typeof TEAM_PALETTE[0] }) => (
+    <div className="mb-4" style={{ overflowX: 'auto' }}>
       <div className="grid text-xs uppercase px-3 py-1" style={{
-        gridTemplateColumns: '1fr 44px 44px 44px 54px 48px 54px',
+        gridTemplateColumns: COLS, minWidth: 640,
         color: 'rgba(255,255,255,0.35)', background: 'rgba(0,0,0,0.3)',
       }}>
         <span>Jucator</span>
-        <span className="text-center">K</span>
-        <span className="text-center">D</span>
-        <span className="text-center">A</span>
-        <span className="text-center">K/D</span>
+        <span className="text-center">K/D/A</span>
+        <span className="text-center">KD</span>
         <span className="text-center">HS%</span>
         <span className="text-center">ADR</span>
+        <span className="text-center">DMG</span>
+        <span className="text-center">MVPs</span>
+        <span className="text-center">UD</span>
+        <span className="text-center">FK</span>
+        <span className="text-center">CL</span>
       </div>
       {players.map((p) => (
         <div key={p.id} className="grid items-center px-3 py-1.5"
-          style={{ gridTemplateColumns: '1fr 44px 44px 44px 54px 48px 54px', borderBottom: '1px solid rgba(0,0,0,0.25)', background: 'rgba(255,255,255,0.03)' }}>
+          style={{ gridTemplateColumns: COLS, minWidth: 640, borderBottom: '1px solid rgba(0,0,0,0.25)', background: 'rgba(255,255,255,0.03)' }}>
           <div className="min-w-0">
             <div className="text-sm font-semibold truncate" style={{ color: palette.text }}>{p.name || p.steam_nickname}</div>
             {p.name && <div className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.35)' }}>{p.steam_nickname}</div>}
           </div>
-          <span className="text-center text-sm font-bold text-white">{p.kills}</span>
-          <span className="text-center text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>{p.deaths}</span>
-          <span className="text-center text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>{p.assists}</span>
+          <span className="text-center text-xs font-bold">
+            <span className="text-white">{p.kills}</span>
+            <span style={{ color: 'rgba(255,255,255,0.3)' }}>/</span>
+            <span className="text-red-400">{p.deaths}</span>
+            <span style={{ color: 'rgba(255,255,255,0.3)' }}>/</span>
+            <span style={{ color: 'rgba(255,255,255,0.5)' }}>{p.assists}</span>
+          </span>
           <span className={`text-center text-sm font-bold ${p.kd_ratio >= 1 ? 'text-green-400' : 'text-red-400'}`}>{p.kd_ratio.toFixed(2)}</span>
           <span className="text-center text-sm" style={{ color: 'rgba(255,255,255,0.6)' }}>{p.hs_percent}%</span>
           <span className="text-center text-sm" style={{ color: 'rgba(255,255,255,0.6)' }}>{p.adr}</span>
+          <span className="text-center text-sm" style={{ color: 'rgba(255,255,255,0.6)' }}>{p.damage}</span>
+          <span className="text-center text-sm" style={{ color: '#f5c040' }}>{p.mvps > 0 ? `★${p.mvps}` : <span style={{ color: 'rgba(255,255,255,0.3)' }}>0</span>}</span>
+          <span className="text-center text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>{p.utility_damage}</span>
+          <span className="text-center text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>{p.first_kills}</span>
+          <span className="text-center text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>{p.clutch_1v1_wins}</span>
         </div>
       ))}
     </div>
@@ -237,37 +424,84 @@ function InlineMatchDetail({ matchId, onBack }: { matchId: number; onBack: () =>
 
       <div className="flex items-center justify-center gap-10 mb-5 py-4 rounded-lg" style={{ background: 'rgba(0,0,0,0.3)' }}>
         <div className="text-right">
+          <div className="text-sm font-bold mb-1" style={{ color: 'rgba(255,255,255,0.5)' }}>{match.team1_name ?? 'Team 1'}</div>
           <div className={`text-5xl font-black ${t1Won ? 'text-green-400' : 'text-red-400'}`}>{match.team1_score}</div>
+          {match.first_half_team1 !== undefined && (
+            <div className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.3)' }}>{match.first_half_team1} — {match.second_half_team1}</div>
+          )}
+          {t1Won && <div className="text-xs text-green-500 font-bold mt-1">VICTORIE</div>}
         </div>
         <div className="text-center">
           <div className="text-xs font-mono uppercase mb-1" style={{ color: 'rgba(255,255,255,0.4)' }}>{match.map_name}</div>
           <div className="text-xl" style={{ color: 'rgba(255,255,255,0.2)' }}>:</div>
           {date && <div className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.25)' }}>{date}</div>}
+          <div className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.2)' }}>{match.rounds_played} runde</div>
         </div>
         <div className="text-left">
+          <div className="text-sm font-bold mb-1" style={{ color: 'rgba(255,255,255,0.5)' }}>{match.team2_name ?? 'Team 2'}</div>
           <div className={`text-5xl font-black ${t2Won ? 'text-green-400' : 'text-red-400'}`}>{match.team2_score}</div>
+          {match.first_half_team2 !== undefined && (
+            <div className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.3)' }}>{match.first_half_team2} — {match.second_half_team2}</div>
+          )}
+          {t2Won && <div className="text-xs text-green-500 font-bold mt-1">VICTORIE</div>}
         </div>
       </div>
 
-      <div className="mb-2 px-1 text-xs font-bold uppercase" style={{ color: TEAM_PALETTE[0].text }}>{match.team1_name}</div>
+      <div className="mb-2 px-1 text-xs font-bold uppercase flex items-center gap-2">
+        <span style={{ color: TEAM_PALETTE[0].text }}>{match.team1_name}</span>
+        {t1Won && <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'rgba(74,222,128,0.15)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.3)' }}>Victorie</span>}
+      </div>
       <TeamTable players={team1} palette={TEAM_PALETTE[0]} />
-      <div className="mb-2 px-1 text-xs font-bold uppercase" style={{ color: TEAM_PALETTE[1].text }}>{match.team2_name}</div>
+
+      <div className="mb-2 px-1 text-xs font-bold uppercase flex items-center gap-2">
+        <span style={{ color: TEAM_PALETTE[1].text }}>{match.team2_name}</span>
+        {t2Won && <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'rgba(74,222,128,0.15)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.3)' }}>Victorie</span>}
+      </div>
       <TeamTable players={team2} palette={TEAM_PALETTE[1]} />
+
+      <div className="text-xs text-center mt-2" style={{ color: 'rgba(255,255,255,0.2)' }}>
+        UD = Utility Damage &nbsp;·&nbsp; FK = First Kills &nbsp;·&nbsp; CL = Clutch 1v1
+      </div>
     </div>
   )
 }
 
 function CS2Content() {
-  const [view, setView] = useState<'players' | 'teams' | 'live' | 'meciuri' | 'bracket'>('players')
+  const [view, setView] = useState<'players' | 'teams' | 'live' | 'meciuri' | 'bracket' | 'player'>('players')
   const [selectedMatchId, setSelectedMatchId] = useState<number | null>(null)
+  const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null)
 
-  const players = dummyPlayers
-  const teams = dummyTeams
-  const matches = dummyMatches
-  const scheduled = dummyScheduled
+  const { data: players = [], isLoading: loadingP } = useQuery<{ id: number; steam_nickname: string; real_name: string | null; team_name: string | null; avatar_url: string | null; matches_played: number; wins: number; losses: number; win_rate: number; kills: number; deaths: number; assists: number; kd_ratio: number; headshot_kills: number; hs_percent: number; damage: number; adr: number; mvps: number; kills_2k: number; kills_3k: number; kills_4k: number; kills_5k: number; utility_damage: number; entry_wins: number; clutch_1v1_wins: number }[]>({
+    queryKey: ['leaderboard'],
+    queryFn: () => api.get('/api/leaderboard').then((r) => r.data),
+  })
+
+  const { data: teams = [], isLoading: loadingT } = useQuery<{ team_name: string; matches_played: number; wins: number; draws: number; losses: number; points: number; rounds_for: number; rounds_against: number; round_diff: number }[]>({
+    queryKey: ['leaderboard-teams'],
+    queryFn: () => api.get('/api/leaderboard/teams').then((r) => r.data),
+  })
+
+  const { data: matches = [] } = useQuery<{ id: number; timestamp: string | null; map_name: string; rounds_played: number; team1_score: number; team2_score: number; team1_name: string | null; team2_name: string | null; players: { id: number; name: string; avatar_url: string | null; team_name: string | null; team: number; kills: number; deaths: number; kd_ratio: number }[] }[]>({
+    queryKey: ['matches'],
+    queryFn: () => api.get('/api/matches').then((r) => r.data),
+    enabled: view === 'meciuri',
+  })
+
+  const { data: scheduled = [] } = useQuery<{ id: number; team_a: string; team_b: string; scheduled_at: string; match_id: number | null; winner: string | null; bracket_round: number | null; bracket_position: number | null; result?: { team1_score: number; team2_score: number; rounds_played: number; map_name: string } }[]>({
+    queryKey: ['scheduled'],
+    queryFn: () => api.get('/api/scheduled').then((r) => r.data),
+    enabled: view === 'meciuri' || view === 'bracket',
+  })
+
+  const { data: live } = useQuery<{ is_live: boolean; map_name?: string; rounds_played?: number; team1_score?: number; team2_score?: number; team1_name?: string; team2_name?: string; players?: { steam_account_id: string; steam_nickname: string; real_name?: string | null; team_name?: string | null; team: number; kills: number; deaths: number; assists: number; headshot_kills: number; damage: number; mvps: number; rounds_played: number }[]; reason?: string }>({
+    queryKey: ['live'],
+    queryFn: () => api.get('/api/live').then((r) => r.data),
+    refetchInterval: 10_000,
+    enabled: view === 'live',
+  })
 
   const playersByTeam = useMemo(() => {
-    const map = new Map<string, LeaderboardPlayer[]>()
+    const map = new Map<string, typeof players>()
     players.forEach((p) => {
       const key = p.team_name ?? '__none__'
       if (!map.has(key)) map.set(key, [])
@@ -285,13 +519,14 @@ function CS2Content() {
       <div className="flex items-center gap-0 sticky top-0 z-10" style={{ background: CS2_HEADER_BG, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
         {([
           ['players', 'Jucatori'],
+          ['teams',   'Echipe'],
           ['live',    'Live'],
           ['meciuri', 'Meciuri'],
           ['bracket', 'Bracket'],
         ] as const).map(([key, label]) => (
           <button
             key={key}
-            onClick={() => { setView(key); setSelectedMatchId(null) }}
+            onClick={() => { setView(key); setSelectedMatchId(null); setSelectedPlayerId(null) }}
             className="px-6 py-3 text-sm font-semibold transition-colors tracking-wide uppercase flex items-center gap-2"
             style={{
               color: view === key ? '#f5c040' : 'rgba(255,255,255,0.35)',
@@ -312,26 +547,47 @@ function CS2Content() {
       {/* PLAYERS */}
       {view === 'players' && (
         <>
-          <ColHeader />
-          {players.map((p, idx) => <PlayerRow key={p.id} p={p} rank={idx + 1} />)}
+          {loadingP && <div className="text-center py-16" style={{ color: 'rgba(255,255,255,0.3)' }}>Se incarca...</div>}
+          {!loadingP && players.length > 0 && (
+            <>
+              <ColHeader />
+              {players.map((p, idx) => (
+                <PlayerRow key={p.id} p={p} rank={idx + 1}
+                  onClick={() => { setSelectedPlayerId(p.id); setView('player') }} />
+              ))}
+            </>
+          )}
         </>
+      )}
+
+      {/* PLAYER PROFILE */}
+      {view === 'player' && selectedPlayerId !== null && (
+        <InlinePlayerProfile
+          playerId={selectedPlayerId}
+          onBack={() => setView('players')}
+          onMatchClick={(matchId) => { setSelectedMatchId(matchId); setView('meciuri') }}
+        />
       )}
 
       {/* LIVE */}
       {view === 'live' && (
         <div className="p-4">
-          <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <div className="w-3 h-3 rounded-full" style={{ background: 'rgba(255,255,255,0.2)' }} />
-            <div className="text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>
-              Niciun meci live in acest moment.
+          {!live && <div className="text-center py-16" style={{ color: 'rgba(255,255,255,0.3)' }}>Se incarca...</div>}
+          {live && !live.is_live && (
+            <div className="flex flex-col items-center justify-center py-20 gap-3">
+              <div className="w-3 h-3 rounded-full" style={{ background: 'rgba(255,255,255,0.2)' }} />
+              <div className="text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                {live.reason ?? 'Niciun meci live in acest moment.'}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 
       {/* TEAMS */}
       {view === 'teams' && (
         <>
+          {loadingT && <div className="text-center py-16" style={{ color: 'rgba(255,255,255,0.3)' }}>Se incarca...</div>}
           {teams.map((t, i) => {
             const palette = TEAM_PALETTE[i % TEAM_PALETTE.length]
             const grp = playersByTeam.get(t.team_name) ?? []
@@ -397,7 +653,7 @@ function CS2Content() {
         const totalH = r1Size * SLOT_BASE
         const totalW = maxRound * ROUND_W - CONN_W
 
-        const matchMap = new Map<string, ScheduledMatch>()
+        const matchMap = new Map<string, typeof scheduled[number]>()
         for (const sm of bracketMatches) matchMap.set(`${sm.bracket_round}-${sm.bracket_position}`, sm)
 
         const cardPos = (round: number, pos: number) => {
@@ -577,9 +833,24 @@ function BettingContent() {
   const [playerSelection, setPlayerSelection] = useState<Record<number, number>>({})
   const [placedBets, setPlacedBets] = useState<Record<number, { type: 'team' | 'player'; value: string }>>({})
 
+  const { data: scheduledAll = [] } = useQuery<{ id: number; team_a: string; team_b: string; scheduled_at: string; match_id: number | null; winner: string | null }[]>({
+    queryKey: ['scheduled'],
+    queryFn: () => api.get('/api/scheduled').then((r) => r.data),
+  })
+
+  const { data: allPlayers = [] } = useQuery<{ id: number; steam_nickname: string; real_name: string | null; team_name: string | null; kd_ratio: number; win_rate: number; adr: number }[]>({
+    queryKey: ['leaderboard'],
+    queryFn: () => api.get('/api/leaderboard').then((r) => r.data),
+  })
+
+  const { data: topUsers = [] } = useQuery<{ id: number; display_name: string; points: number; bets_total: number; bets_won: number; bets_draw: number; bets_lost: number; bets_pending: number }[]>({
+    queryKey: ['leaderboard-bets'],
+    queryFn: () => api.get('/api/leaderboard/bets').then((r) => r.data),
+    enabled: tab === 'leaderboard',
+  })
+
   const now = new Date()
-  const upcoming = dummyScheduled.filter((sm) => !sm.winner && new Date(sm.scheduled_at) > now)
-  const allPlayers = dummyPlayers
+  const upcoming = scheduledAll.filter((sm) => !sm.winner && new Date(sm.scheduled_at) > now)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#B71C1C' }}>
@@ -723,11 +994,11 @@ function BettingContent() {
               </div>
             )}
             {Object.entries(placedBets).map(([smId, bet]) => {
-              const sm = dummyScheduled.find((s) => s.id === Number(smId))
+              const sm = scheduledAll.find((s) => s.id === Number(smId))
               if (!sm) return null
               const label = bet.type === 'team'
                 ? (bet.value === 'team_a' ? sm.team_a : sm.team_b)
-                : dummyPlayers.find((p) => p.id === Number(bet.value))?.real_name ?? dummyPlayers.find((p) => p.id === Number(bet.value))?.steam_nickname ?? '—'
+                : allPlayers.find((p) => p.id === Number(bet.value))?.real_name ?? allPlayers.find((p) => p.id === Number(bet.value))?.steam_nickname ?? '—'
               return (
                 <div key={smId} style={{ background: '#fff', borderRadius: '10px', padding: '12px 14px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div>
@@ -749,23 +1020,20 @@ function BettingContent() {
         {/* Clasament pariuri */}
         {tab === 'leaderboard' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {dummyPlayers.map((p, idx) => {
-              const bet = { points: [87, 74, 61, 48, 33, 21][idx] ?? 10, total: [28, 25, 22, 20, 18, 15][idx] ?? 10, won: [19, 16, 13, 10, 8, 5][idx] ?? 5 }
-              return (
-                <div key={p.id} style={{ background: '#fff', borderRadius: '10px', padding: '12px 14px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ fontWeight: 900, fontSize: '18px', color: idx === 0 ? '#f5c040' : idx === 1 ? '#9e9e9e' : idx === 2 ? '#cd7f32' : '#bbb', width: 28, textAlign: 'center' }}>
-                      {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : idx + 1}
-                    </div>
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: '14px', color: '#1a1a1a' }}>{p.real_name || p.steam_nickname}</div>
-                      <div style={{ fontSize: '11px', color: '#999' }}>{bet.won}/{bet.total} castigate</div>
-                    </div>
+            {topUsers.map((u, idx) => (
+              <div key={u.id} style={{ background: '#fff', borderRadius: '10px', padding: '12px 14px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ fontWeight: 900, fontSize: '18px', color: idx === 0 ? '#f5c040' : idx === 1 ? '#9e9e9e' : idx === 2 ? '#cd7f32' : '#bbb', width: 28, textAlign: 'center' }}>
+                    {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : idx + 1}
                   </div>
-                  <div style={{ fontSize: '22px', fontWeight: 900, color: '#C62828' }}>{bet.points}</div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: '14px', color: '#1a1a1a' }}>{u.display_name}</div>
+                    <div style={{ fontSize: '11px', color: '#999' }}>{u.bets_won}/{u.bets_total} castigate</div>
+                  </div>
                 </div>
-              )
-            })}
+                <div style={{ fontSize: '22px', fontWeight: 900, color: '#C62828' }}>{u.points}</div>
+              </div>
+            ))}
           </div>
         )}
       </div>

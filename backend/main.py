@@ -8,13 +8,21 @@ import os
 
 load_dotenv()
 
-from database import engine, Base
+from database import engine, Base, SessionLocal
 from routers import auth, worldcup
+from routers import leaderboard, matches, players, scheduled, live
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
+
+    from seed import seed
+    db = SessionLocal()
+    try:
+        seed(db)
+    finally:
+        db.close()
 
     from services.worldcup_sync import background_sync_loop
     task = asyncio.create_task(background_sync_loop())
@@ -53,6 +61,11 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(worldcup.router)
+app.include_router(leaderboard.router)
+app.include_router(matches.router)
+app.include_router(players.router)
+app.include_router(scheduled.router)
+app.include_router(live.router)
 
 
 @app.get("/api/health")

@@ -55,6 +55,7 @@ export const dummyMatches: MatchSummary[] = [
   {
     id: 1, timestamp: '2025-05-28T19:00:00Z', map_name: 'de_mirage',
     rounds_played: 30, team1_score: 16, team2_score: 14,
+    first_half_team1: 9, first_half_team2: 6, second_half_team1: 7, second_half_team2: 8,
     team1_name: 'Alpha Squad', team2_name: 'Beta Force',
     players: [
       { id: 1, name: 'xHunterRO', steam_nickname: 'xHunterRO', avatar_url: null, team_name: 'Alpha Squad', team: 1, won: true, kills: 24, deaths: 14, assists: 5, headshot_kills: 12, hs_percent: 50, damage: 3240, adr: 108.0, kd_ratio: 1.71, mvps: 5, score: 68, rounds_won: 16, kills_2k: 4, kills_3k: 2, kills_4k: 1, kills_5k: 0, first_kills: 6, utility_damage: 210, enemies_flashed: 18, clutch_1v1_wins: 2, clutch_1v2_wins: 1, entry_wins: 5 },
@@ -66,6 +67,7 @@ export const dummyMatches: MatchSummary[] = [
   {
     id: 2, timestamp: '2025-05-25T19:30:00Z', map_name: 'de_inferno',
     rounds_played: 26, team1_score: 13, team2_score: 13,
+    first_half_team1: 8, first_half_team2: 7, second_half_team1: 5, second_half_team2: 6,
     team1_name: 'Beta Force', team2_name: 'Gamma Wolves',
     players: [
       { id: 3, name: 'NightOwl_CS', steam_nickname: 'NightOwl_CS', avatar_url: null, team_name: 'Beta Force', team: 1, won: false, kills: 20, deaths: 17, assists: 4, headshot_kills: 10, hs_percent: 50, damage: 2890, adr: 111.2, kd_ratio: 1.18, mvps: 4, score: 58, rounds_won: 13, kills_2k: 3, kills_3k: 2, kills_4k: 0, kills_5k: 0, first_kills: 5, utility_damage: 160, enemies_flashed: 14, clutch_1v1_wins: 1, clutch_1v2_wins: 0, entry_wins: 4 },
@@ -77,6 +79,7 @@ export const dummyMatches: MatchSummary[] = [
   {
     id: 3, timestamp: '2025-05-20T20:00:00Z', map_name: 'de_dust2',
     rounds_played: 24, team1_score: 16, team2_score: 8,
+    first_half_team1: 10, first_half_team2: 5, second_half_team1: 6, second_half_team2: 3,
     team1_name: 'Alpha Squad', team2_name: 'Gamma Wolves',
     players: [
       { id: 1, name: 'xHunterRO', steam_nickname: 'xHunterRO', avatar_url: null, team_name: 'Alpha Squad', team: 1, won: true, kills: 22, deaths: 10, assists: 4, headshot_kills: 11, hs_percent: 50, damage: 2980, adr: 124.2, kd_ratio: 2.20, mvps: 6, score: 66, rounds_won: 16, kills_2k: 5, kills_3k: 2, kills_4k: 1, kills_5k: 0, first_kills: 7, utility_damage: 190, enemies_flashed: 15, clutch_1v1_wins: 2, clutch_1v2_wins: 1, entry_wins: 6 },
