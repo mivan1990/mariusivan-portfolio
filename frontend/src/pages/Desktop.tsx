@@ -4123,46 +4123,79 @@ export default function Desktop() {
           <DesktopWindow title="Fortuna WC2026 — README.txt — Notepad" imgSrc="/readme_icon.svg" onClose={() => closeWin('readme_fortuna')} onMinimize={() => minimizeWin('readme_fortuna')} maxWidth="680px">
             <div style={{ height: '100%', overflowY: 'auto', background: 'white', padding: '16px 20px', fontFamily: 'Courier New, monospace', fontSize: '13px', lineHeight: '1.7', color: '#111' }}>
               <pre style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{`================================================================
-  FORTUNA WC2026 — Documentatie proiect
+  FORTUNA WC2026
 ================================================================
 
-DESPRE PROIECT
---------------
-Fortuna WC2026 este o aplicatie interna de pariuri pe meciurile
-FIFA World Cup 2026, construita pentru angajatii FEG.
+[EN] Internal betting app for FIFA World Cup 2026 matches,
+     built for FEG employees. Real data, live scores.
 
-Proiectul simuleaza o casa de pariuri reala, cu date live
-din competitia oficiala.
+HOW IT WORKS
+------------
+  • On first open, the user gets an anonymous guest
+    account automatically — no registration needed.
 
+  • Matches are synced in real time via the
+    football-data.org API (official WC2026 data).
+
+  • Bets are placed on the match result:
+      1 = home team wins
+      X = draw (group stage only)
+      2 = away team wins
+
+  • Bets lock automatically at kick-off time.
+
+  • Points are awarded automatically after the match:
+      +3 pts — correct prediction
+      +0 pts — wrong prediction
+
+REAL DATA
+---------
+  All matches, scores and statuses are official
+  FIFA World Cup 2026 data.
+  Source: football-data.org
+
+STACK
+-----
+  Frontend  : React + TypeScript + Vite + Tailwind CSS
+  Backend   : Python FastAPI + SQLite
+  API       : football-data.org (WC2026)
+  Hosting   : VPS Ubuntu + nginx + Let's Encrypt
+
+
+################################################################
+#                                                              #
+#                        [ ROMANA ]                            #
+#                                                              #
+################################################################
+
+[RO] Aplicatie interna de pariuri pe meciurile FIFA World
+     Cup 2026, construita pentru angajatii FEG. Date reale,
+     scoruri live.
 
 CUM FUNCTIONEAZA
 ----------------
-  • La prima deschidere, utilizatorul trebuie sa se inregistreze cu un adresa de emial a corporatiei, 
-    ulterior putand sa se logheze folosind emailul si parola.
+  • La prima deschidere, utilizatorul primeste automat
+    un cont guest anonim — nu necesita inregistrare.
 
-  • Meciurile sunt sincronizate in timp real prin API-ul din
-    football-data.org (date oficiale WC2026)
+  • Meciurile sunt sincronizate in timp real prin
+    API-ul football-data.org (date oficiale WC2026).
 
-  • Pariurile se plaseaza pe rezultatul unui meci:
+  • Pariurile se plaseaza pe rezultatul meciului:
       1 = victorie echipa de acasa
-      X = egal
+      X = egal (doar in faza grupelor)
       2 = victorie echipa in deplasare
 
-  • Pariurile se blocheaza automat la ora de start
-    a fiecarui meci
+  • Pariurile se blocheaza automat la ora de start.
 
-  • Dupa terminarea meciului, punctele se acorda automat:
+  • Punctele se acorda automat dupa terminarea meciului:
       +3 puncte — pronostic corect
       +0 puncte — pronostic gresit
-
 
 DATE REALE
 ----------
   Toate meciurile, scorurile si statusurile sunt date
-  reale din competitia FIFA World Cup 2026.
-
+  oficiale FIFA World Cup 2026.
   Sursa: football-data.org
-
 
 STACK TEHNIC
 ------------
@@ -4170,7 +4203,6 @@ STACK TEHNIC
   Backend   : Python FastAPI + SQLite
   API extern: football-data.org (WC2026)
   Hosting   : VPS Ubuntu + nginx + Let's Encrypt
-
 
 ================================================================
   github.com/mivan1990
@@ -4185,15 +4217,34 @@ STACK TEHNIC
           <DesktopWindow title="Numlock.ro — README.txt — Notepad" imgSrc="/readme_icon.svg" onClose={() => closeWin('readme_numlock')} onMinimize={() => minimizeWin('readme_numlock')} maxWidth="680px">
             <div style={{ height: '100%', overflowY: 'auto', background: 'white', padding: '16px 20px', fontFamily: 'Courier New, monospace', fontSize: '13px', lineHeight: '1.7', color: '#111' }}>
               <pre style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{`================================================================
-  NUMLOCK.RO — Documentatie proiect
+  NUMLOCK.RO
 ================================================================
 
-Magazin online construit pe platfforma Shopify.
+[EN] Online store for desk mats, built from scratch
+     on Shopify — from domain purchase to launch.
 
-ROL: Co-fondator · Administrator
+ROLE: Co-founder · Administrator · Developer
 
-  • Setup si customizare completa platforma Shopify
-  • Personalizare design si experienta utilizator
+  • Full Shopify store setup and configuration
+  • Theme customization and user experience design
+  • Technical maintenance and ongoing operations
+
+  numlock.ro
+
+
+################################################################
+#                                                              #
+#                        [ ROMANA ]                            #
+#                                                              #
+################################################################
+
+[RO] Magazin online de deskmaturi, construit de la zero
+     pe Shopify — de la cumpararea domeniului pana la lansare.
+
+ROL: Co-fondator · Administrator · Programator
+
+  • Setup si configurare completa a magazinului Shopify
+  • Personalizare tema si design experienta utilizator
   • Mentenanta tehnica si operare curenta
 
   numlock.ro
@@ -4209,80 +4260,118 @@ ROL: Co-fondator · Administrator
           <DesktopWindow title="CS2 & Pariuri — README.txt — Notepad" imgSrc="/readme_icon.svg" onClose={() => closeWin('readme')} onMinimize={() => minimizeWin('readme')} maxWidth="680px">
             <div style={{ height: '100%', overflowY: 'auto', background: 'white', padding: '16px 20px', fontFamily: 'Courier New, monospace', fontSize: '13px', lineHeight: '1.7', color: '#111' }}>
               <pre style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{`================================================================
-  CS2 SCOREBOARD + CASA PARIURILOR — Documentatie proiect
+  CS2 SCOREBOARD + CASA PARIURILOR
 ================================================================
 
-DESPRE PROIECT
---------------
-CS2 Scoreboard si Casa Pariurilor fac parte din aceeasi
-aplicatie: o platforma interna de competitie 2v2 Counter-Strike 2
-construita pentru angajatii FEG.
-
-Platforma ruleaza pe o masina Windows locala din sediul FEG,
-conectata direct la serverul CS2.
-
-Proiectul are 3 componente principale accesibile din acest
-desktop:
-
-  [1] CS2 Scoreboard
-  [2] Casa Pariurilor
-  [3] Admin Panel
-
+[EN] CS2 Scoreboard and Casa Pariurilor are part of the
+     same internal platform for 2v2 Counter-Strike 2
+     competition, built for FEG employees.
+     Runs on a local Windows machine at FEG headquarters,
+     connected directly to the CS2 server.
 
 [1] CS2 SCOREBOARD
 ------------------
-Afiseaza statisticile live si istoricul competitiei:
-
-  • Jucatori   — clasament cu K/D, ADR, HS%, MVPs, Win Rate
-  • Echipe     — clasament echipe cu puncte, victorii, round diff
-  • Live       — statistici in timp real din meciul curent
-  • Meciuri    — toate meciurile jucate cu statistici complete
+  • Players    — leaderboard with K/D, ADR, HS%, MVPs, Win Rate
+  • Teams      — team standings with points and round diff
+  • Live       — real-time stats from the current match
+  • Matches    — full match history with detailed stats
                  (K/D/A, damage, first kills, clutches etc.)
-  • Bracket    — tabloul eliminatoriu al turneului
+  • Bracket    — tournament elimination bracket
 
-Datele vin automat din plugin-ul CS2 instalat pe server,
-prin Game State Integration (GSI).
-
+  Data is captured automatically via the CS2 plugin
+  using Game State Integration (GSI).
 
 [2] CASA PARIURILOR
 -------------------
-Sistem de pariuri pe meciurile programate:
+  • Team bets    — predict the match winner
+  • Player bets  — predict the top fragger
+  • Odds         — calculated automatically from K/D,
+                   Win Rate and ADR
+  • Leaderboard  — total points per user
+                   (+3 win, +0 loss)
 
-  • Pariuri pe echipe  — prezici castigatorul meciului
-  • Pariuri pe jucator — prezici top fragger-ul meciului
-  • Cotele             — calculate automat pe baza K/D,
-                         Win Rate si ADR al fiecarui jucator
-  • Clasament pariuri  — punctaj acumulat de fiecare jucator
-                         (3 pct victorie, 0 pct pierdut)
+  Bets lock automatically at match start time.
 
-Pariurile se blocheaza automat la ora meciului.
+[3] ADMIN PANEL
+---------------
+  Live Session    — start/stop CS2 data capture
+  Matches         — schedule matches, set winners
+                    (triggers bet processing)
+  Match History   — all matches with score, map,
+                    winner and number of bets placed
+  CS2 Players     — add/edit players and avatars
+  CS2 Teams       — manage teams and rosters
+  Users           — manage betting accounts
+  Logs            — full activity history
+  Bet Logs        — view all bets per user
+  Database        — backup/restore
+  General Message — display a message on all users desktops
+
+STACK
+-----
+  Frontend  : React + TypeScript + Vite + Tailwind CSS
+  Backend   : Python FastAPI + SQLite
+  CS2 Plugin: C# (Game State Integration)
+  Hosting   : VPS Ubuntu + nginx + Let's Encrypt
 
 
-[3] LEGATURA PRIN ADMIN PANEL
-------------------------------
-Adminul controleaza ambele aplicatii dintr-un singur panou:
+################################################################
+#                                                              #
+#                        [ ROMANA ]                            #
+#                                                              #
+################################################################
 
-  Sesiune live    — porneste/opreste captura datelor CS2
-  Meciuri         — programeaza meciuri viitoare, seteaza
-                    castigatori (activeaza procesarea pariurilor)
-  Istoric Meciuri — toate meciurile jucate cu scor, harta,
-                    castigator si numarul de bilete plasate
+[RO] CS2 Scoreboard si Casa Pariurilor fac parte din
+     aceeasi platforma interna de competitie 2v2
+     Counter-Strike 2, construita pentru angajatii FEG.
+     Ruleaza pe o masina Windows locala din sediul FEG,
+     conectata direct la serverul CS2.
+
+[1] CS2 SCOREBOARD
+------------------
+  • Jucatori   — clasament cu K/D, ADR, HS%, MVPs, Win Rate
+  • Echipe     — clasament cu puncte si diferenta de runde
+  • Live       — statistici in timp real din meciul curent
+  • Meciuri    — istoric complet cu statistici detaliate
+                 (K/D/A, damage, first kills, clutches etc.)
+  • Bracket    — tabloul eliminatoriu al turneului
+
+  Datele sunt capturate automat prin plugin-ul CS2
+  folosind Game State Integration (GSI).
+
+[2] CASA PARIURILOR
+-------------------
+  • Pariuri echipe  — prezici castigatorul meciului
+  • Pariuri jucator — prezici top fragger-ul
+  • Cote            — calculate automat din K/D,
+                      Win Rate si ADR
+  • Clasament       — punctaj total per utilizator
+                      (+3 victorie, +0 pierdut)
+
+  Pariurile se blocheaza automat la ora meciului.
+
+[3] ADMIN PANEL
+---------------
+  Sesiune Live    — porneste/opreste captura datelor CS2
+  Meciuri         — programeaza meciuri, seteaza castigatori
+                    (activeaza procesarea pariurilor)
+  Istoric Meciuri — toate meciurile cu scor, harta,
+                    castigator si nr. bilete plasate
   Jucatori CS     — adauga/editeaza jucatori si avatare
   Echipe CS2      — gestioneaza echipele si componenta lor
   Utilizatori     — gestioneaza conturile de pariuri
-  Loguri          — istoric complet al actiunilor din platforma
-  Loguri Bilete   — vizualizeaza toate pariurile per utilizator
+  Loguri          — istoric complet al actiunilor
+  Loguri Bilete   — toate pariurile per utilizator
   Baza de date    — backup/restore
-  Mesaj General   — afiseaza un mesaj vizibil pe desktop-ul
+  Mesaj General   — afiseaza un mesaj pe desktop-ul
                     tuturor utilizatorilor conectati
-
 
 STACK TEHNIC
 ------------
   Frontend  : React + TypeScript + Vite + Tailwind CSS
   Backend   : Python FastAPI + SQLite
   Plugin CS2: C# (Game State Integration)
-
+  Hosting   : VPS Ubuntu + nginx + Let's Encrypt
 
 ================================================================
   github.com/mivan1990
