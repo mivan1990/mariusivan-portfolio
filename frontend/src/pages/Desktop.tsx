@@ -3508,7 +3508,7 @@ function DesktopIcon({ icon, label, onClick, onContextMenu }: { icon: string; la
 
 // --- Main Desktop ---
 
-type WindowId = 'cs2' | 'betting' | 'fortuna' | 'admin' | 'youtube' | 'readme' | 'readme_fortuna' | 'readme_numlock'
+type WindowId = 'cs2' | 'betting' | 'fortuna' | 'admin' | 'youtube' | 'readme' | 'readme_fortuna' | 'readme_numlock' | 'readme_feg'
 interface WinState { open: boolean; minimized: boolean }
 
 export default function Desktop() {
@@ -3522,6 +3522,7 @@ export default function Desktop() {
     readme:         { open: false, minimized: false },
     readme_fortuna: { open: false, minimized: false },
     readme_numlock: { open: false, minimized: false },
+    readme_feg:     { open: false, minimized: false },
   })
   const [user, setUser] = useState<UserInfo | null>(null)
   const [clock, setClock] = useState(new Date())
@@ -3645,11 +3646,17 @@ export default function Desktop() {
         </div>
       )}
 
-      {/* Desktop icons */}
-      <div className="absolute left-8 flex flex-col pt-4" style={{ top: generalMessage ? '80px' : '16px' }}>
-
-        {/* Grup 1 — FEG CS2 Competition */}
-        <div className="flex flex-col gap-2">
+      {/* Desktop icons — auto-wrap in columns based on available height */}
+      <div
+        className="absolute left-4 flex flex-col flex-wrap gap-x-1 pt-4"
+        style={{
+          top: generalMessage ? '80px' : '16px',
+          bottom: '50px',
+          alignContent: 'flex-start',
+        }}
+      >
+        {/* Grup 1 — FEG CS2 */}
+        <div className="flex flex-col gap-2 mb-3">
           <div className="text-center select-none px-1 py-0.5 rounded"
             style={{ color: 'rgba(255,255,255,0.55)', fontSize: '10px', letterSpacing: '0.08em', textShadow: '0 1px 3px rgba(0,0,0,0.9)', background: 'rgba(0,0,0,0.25)' }}>
             ─ FEG CS2 ─
@@ -3665,22 +3672,18 @@ export default function Desktop() {
           }} />
         </div>
 
-        <div style={{ height: '14px' }} />
-
-        {/* Grup 2 — Fortuna WC2026 */}
-        <div className="flex flex-col gap-2">
+        {/* Grup 2 — Fortuna */}
+        <div className="flex flex-col gap-2 mb-3">
           <div className="text-center select-none px-1 py-0.5 rounded"
             style={{ color: 'rgba(255,255,255,0.55)', fontSize: '10px', letterSpacing: '0.08em', textShadow: '0 1px 3px rgba(0,0,0,0.9)', background: 'rgba(0,0,0,0.25)' }}>
-            ─ Fortuna WC2026 ─
+            ─ Fortuna ─
           </div>
           <DesktopIcon icon="/readme_icon.svg" label="README.txt" onClick={() => openWin('readme_fortuna')} />
           <DesktopIcon icon="/ftn_logo.png" label="Fortuna WC2026" onClick={() => openWin('fortuna')} />
         </div>
 
-        <div style={{ height: '14px' }} />
-
-        {/* Grup 3 — Numlock.ro */}
-        <div className="flex flex-col gap-2">
+        {/* Grup 3 — Numlock */}
+        <div className="flex flex-col gap-2 mb-3">
           <div className="text-center select-none px-1 py-0.5 rounded"
             style={{ color: 'rgba(255,255,255,0.55)', fontSize: '10px', letterSpacing: '0.08em', textShadow: '0 1px 3px rgba(0,0,0,0.9)', background: 'rgba(0,0,0,0.25)' }}>
             ─ Numlock.ro ─
@@ -3689,10 +3692,17 @@ export default function Desktop() {
           <DesktopIcon icon="/numlock.png" label="Numlock.ro" onClick={() => window.open('https://numlock.ro', '_blank')} />
         </div>
 
-        <div style={{ height: '14px' }} />
+        {/* Grup 4 — FEG Intranet */}
+        <div className="flex flex-col gap-2 mb-3">
+          <div className="text-center select-none px-1 py-0.5 rounded"
+            style={{ color: 'rgba(255,255,255,0.55)', fontSize: '10px', letterSpacing: '0.08em', textShadow: '0 1px 3px rgba(0,0,0,0.9)', background: 'rgba(0,0,0,0.25)' }}>
+            ─ FEG Intranet ─
+          </div>
+          <DesktopIcon icon="/feglogo.jpeg" label="FEG" onClick={() => openWin('readme_feg')} />
+        </div>
 
-        {/* Grup 4 — GitHub */}
-        <div className="flex flex-col gap-2">
+        {/* Grup 5 — GitHub */}
+        <div className="flex flex-col gap-2 mb-3">
           <div className="text-center select-none px-1 py-0.5 rounded"
             style={{ color: 'rgba(255,255,255,0.55)', fontSize: '10px', letterSpacing: '0.08em', textShadow: '0 1px 3px rgba(0,0,0,0.9)', background: 'rgba(0,0,0,0.25)' }}>
             ─ GitHub ─
@@ -4372,6 +4382,119 @@ STACK TEHNIC
   Backend   : Python FastAPI + SQLite
   Plugin CS2: C# (Game State Integration)
   Hosting   : VPS Ubuntu + nginx + Let's Encrypt
+
+================================================================
+  github.com/mivan1990
+================================================================`}</pre>
+            </div>
+          </DesktopWindow>
+        </div>
+      )}
+
+      {wins.readme_feg.open && (
+        <div style={{ display: wins.readme_feg.minimized ? 'none' : undefined }}>
+          <DesktopWindow title="FEG — Notepad" imgSrc="/feglogo.jpeg" onClose={() => closeWin('readme_feg')} onMinimize={() => minimizeWin('readme_feg')} maxWidth="740px">
+            <div style={{ height: '100%', overflowY: 'auto', background: 'white', padding: '16px 20px', fontFamily: 'Courier New, monospace', fontSize: '13px', lineHeight: '1.7', color: '#111' }}>
+              <pre style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{`================================================================
+  FEG GROUP — Junior Developer
+  January 2023 — Present
+================================================================
+
+[EN] Fortuna Entertainment Group operates two betting brands:
+     Fortuna and Casa Pariurilor. I joined as a Junior Developer
+     in January 2023 — starting from zero programming knowledge,
+     self-taught — and grew within a team of up to 6 developers.
+
+PROJECT OVERVIEW
+----------------
+  Large-scale internal business intranet built as a modular
+  monolith on Laravel (82 modules), covering betting operations,
+  HR, finance, compliance and employee productivity across
+  both brands and all shop locations.
+
+WHAT I WORKED ON
+----------------
+  • Built and maintained features across shop operations
+    (shop lifecycle, openings, closures, audits, inspections),
+    HR (employee onboarding, work contracts, timesheets,
+    vacations, e-learning), Finance (expense reports,
+    invoice processing) and Compliance (GDPR requests,
+    document signing)
+
+  • Implemented per-resource access control on top of Entrust
+    ACL — including a hierarchical document library with
+    5-axis permissions (folder×shop, folder×user, file×shop,
+    file×user, legacy JSON groups)
+
+  • Developed server-rendered Blade pages — controllers,
+    routes, Eloquent models, migrations, form handling
+
+  • Integrated Microsoft Graph mailer (M365), Google Maps
+    and three PDF toolchains (dompdf / FPDF / wkhtmltopdf)
+
+  • Wrote scheduled Artisan commands for periodic exports,
+    KPI rollups and archive sweeps
+
+PROJECT TECHNOLOGIES
+--------------------
+  Backend  : PHP 8.2 · Laravel 10 · MySQL · Redis
+  Frontend : Blade · Bootstrap 5 · JQuery
+  Storage  : NetApp NFS · AWS S3 · SFTP
+  Auth     : Entrust ACL · Google 2FA · WebPush
+  Tools    : Yajra Datatables · dompdf · FPDF · wkhtmltopdf
+             Maatwebsite Excel · Microsoft Graph Mail
+
+
+################################################################
+#                                                              #
+#                        [ ROMANA ]                            #
+#                                                              #
+################################################################
+
+[RO] Fortuna Entertainment Group opereaza doua branduri de
+     pariuri: Fortuna si Casa Pariurilor. Am intrat ca Junior
+     Developer in ianuarie 2023 — incepand de la zero cunostinte
+     de programare, autodidact — si am crescut intr-o echipa
+     de maximum 6 developeri.
+
+DESCRIERE PROIECT
+-----------------
+  Intranet intern la scara larga construit ca monolith modular
+  pe Laravel (82 module), acoperind operatiuni pariuri, HR,
+  finante, conformitate si productivitate angajati pentru
+  ambele branduri si toate locatiile.
+
+CE AM LUCRAT
+------------
+  • Construit si mentinut functionalitati in operatiuni magazine
+    (ciclu de viata, deschideri, inchideri, audituri, inspectii),
+    HR (onboarding angajati, contracte de munca, pontaje,
+    concedii, e-learning), Finante (rapoarte de cheltuieli,
+    procesare facturi) si Conformitate (cereri GDPR,
+    semnare documente)
+
+  • Implementat control acces per-resursa pe Entrust ACL —
+    inclusiv o biblioteca de documente ierarhica cu permisiuni
+    pe 5 axe (folder×magazin, folder×user, fisier×magazin,
+    fisier×user, grupuri JSON legacy)
+
+  • Dezvoltat pagini Blade server-rendered — controllere,
+    rute, modele Eloquent, migratii, procesare formulare
+
+  • Integrat Microsoft Graph mailer (M365), Google Maps
+    si trei toolchain-uri PDF (dompdf / FPDF / wkhtmltopdf)
+
+  • Scris comenzi Artisan programate pentru exporturi
+    periodice, KPI rollups si arhivare
+
+TEHNOLOGII FOLOSITE IN PROIECT
+------------------------------
+  Backend  : PHP 8.2 · Laravel 10 · MySQL · Redis
+  Frontend : Blade · Bootstrap 5 · jQuery
+  Storage  : NetApp NFS · AWS S3 · SFTP
+  Auth     : Entrust ACL · Google 2FA · WebPush
+  Tools    : Yajra Datatables · dompdf · FPDF · wkhtmltopdf
+             Maatwebsite Excel · Microsoft Graph Mail
 
 ================================================================
   github.com/mivan1990
