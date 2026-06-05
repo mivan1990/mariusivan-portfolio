@@ -3508,18 +3508,20 @@ function DesktopIcon({ icon, label, onClick, onContextMenu }: { icon: string; la
 
 // --- Main Desktop ---
 
-type WindowId = 'cs2' | 'betting' | 'fortuna' | 'admin' | 'youtube' | 'readme'
+type WindowId = 'cs2' | 'betting' | 'fortuna' | 'admin' | 'youtube' | 'readme' | 'readme_fortuna' | 'readme_numlock'
 interface WinState { open: boolean; minimized: boolean }
 
 export default function Desktop() {
   const navigate = useNavigate()
   const [wins, setWins] = useState<Record<WindowId, WinState>>({
-    cs2:     { open: false, minimized: false },
-    betting: { open: false, minimized: false },
-    fortuna: { open: false, minimized: false },
-    admin:   { open: false, minimized: false },
-    youtube: { open: false, minimized: false },
-    readme:  { open: false, minimized: false },
+    cs2:            { open: false, minimized: false },
+    betting:        { open: false, minimized: false },
+    fortuna:        { open: false, minimized: false },
+    admin:          { open: false, minimized: false },
+    youtube:        { open: false, minimized: false },
+    readme:         { open: false, minimized: false },
+    readme_fortuna: { open: false, minimized: false },
+    readme_numlock: { open: false, minimized: false },
   })
   const [user, setUser] = useState<UserInfo | null>(null)
   const [clock, setClock] = useState(new Date())
@@ -3646,32 +3648,56 @@ export default function Desktop() {
       {/* Desktop icons */}
       <div className="absolute left-8 flex flex-col pt-4" style={{ top: generalMessage ? '80px' : '16px' }}>
 
-        {/* Grup FEG */}
+        {/* Grup 1 — FEG CS2 Competition */}
         <div className="flex flex-col gap-2">
-          <div className="text-center text-xs select-none px-1 py-0.5 rounded"
+          <div className="text-center select-none px-1 py-0.5 rounded"
             style={{ color: 'rgba(255,255,255,0.55)', fontSize: '10px', letterSpacing: '0.08em', textShadow: '0 1px 3px rgba(0,0,0,0.9)', background: 'rgba(0,0,0,0.25)' }}>
-            ─ FEG Project ─
+            ─ FEG CS2 ─
           </div>
           <DesktopIcon icon="/readme_icon.svg" label="README.txt" onClick={() => openWin('readme')} />
           <DesktopIcon icon="/cs2_icon.png" label="CS2 Scoreboard" onClick={() => openWin('cs2')} />
           <DesktopIcon icon="/casapariurilor_icon.jpg" label="Casa Pariurilor" onClick={() => openWin('betting')} />
-        </div>
-
-        {/* Separator */}
-        <div style={{ height: '16px' }} />
-
-        {/* Alte iconite */}
-        <div className="flex flex-col gap-2">
-          <DesktopIcon icon="/numlock.png" label="Numlock.ro" onClick={() => window.open('https://numlock.ro', '_blank')} />
           <DesktopIcon icon="/Youtube_logo.png" label="YouTube" onClick={() => openWin('youtube')} onContextMenu={(e) => {
             if (isAdmin) {
               e.preventDefault()
               setContextMenu({ x: e.clientX, y: e.clientY })
             }
           }} />
-          {window.location.hostname === 'localhost' && (
-            <DesktopIcon icon="/ftn_logo.png" label="Fortuna WC2026" onClick={() => openWin('fortuna')} />
-          )}
+        </div>
+
+        <div style={{ height: '14px' }} />
+
+        {/* Grup 2 — Fortuna WC2026 */}
+        <div className="flex flex-col gap-2">
+          <div className="text-center select-none px-1 py-0.5 rounded"
+            style={{ color: 'rgba(255,255,255,0.55)', fontSize: '10px', letterSpacing: '0.08em', textShadow: '0 1px 3px rgba(0,0,0,0.9)', background: 'rgba(0,0,0,0.25)' }}>
+            ─ Fortuna WC2026 ─
+          </div>
+          <DesktopIcon icon="/readme_icon.svg" label="README.txt" onClick={() => openWin('readme_fortuna')} />
+          <DesktopIcon icon="/ftn_logo.png" label="Fortuna WC2026" onClick={() => openWin('fortuna')} />
+        </div>
+
+        <div style={{ height: '14px' }} />
+
+        {/* Grup 3 — Numlock.ro */}
+        <div className="flex flex-col gap-2">
+          <div className="text-center select-none px-1 py-0.5 rounded"
+            style={{ color: 'rgba(255,255,255,0.55)', fontSize: '10px', letterSpacing: '0.08em', textShadow: '0 1px 3px rgba(0,0,0,0.9)', background: 'rgba(0,0,0,0.25)' }}>
+            ─ Numlock.ro ─
+          </div>
+          <DesktopIcon icon="/readme_icon.svg" label="README.txt" onClick={() => openWin('readme_numlock')} />
+          <DesktopIcon icon="/numlock.png" label="Numlock.ro" onClick={() => window.open('https://numlock.ro', '_blank')} />
+        </div>
+
+        <div style={{ height: '14px' }} />
+
+        {/* Grup 4 — GitHub */}
+        <div className="flex flex-col gap-2">
+          <div className="text-center select-none px-1 py-0.5 rounded"
+            style={{ color: 'rgba(255,255,255,0.55)', fontSize: '10px', letterSpacing: '0.08em', textShadow: '0 1px 3px rgba(0,0,0,0.9)', background: 'rgba(0,0,0,0.25)' }}>
+            ─ GitHub ─
+          </div>
+          <DesktopIcon icon="/github-logo.png" label="mivan1990" onClick={() => window.open('https://github.com/mivan1990', '_blank')} />
         </div>
 
       </div>
@@ -4092,6 +4118,92 @@ export default function Desktop() {
         </div>
       )}
 
+      {wins.readme_fortuna.open && (
+        <div style={{ display: wins.readme_fortuna.minimized ? 'none' : undefined }}>
+          <DesktopWindow title="Fortuna WC2026 — README.txt — Notepad" imgSrc="/readme_icon.svg" onClose={() => closeWin('readme_fortuna')} onMinimize={() => minimizeWin('readme_fortuna')} maxWidth="680px">
+            <div style={{ height: '100%', overflowY: 'auto', background: 'white', padding: '16px 20px', fontFamily: 'Courier New, monospace', fontSize: '13px', lineHeight: '1.7', color: '#111' }}>
+              <pre style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{`================================================================
+  FORTUNA WC2026 — Documentatie proiect
+================================================================
+
+DESPRE PROIECT
+--------------
+Fortuna WC2026 este o aplicatie interna de pariuri pe meciurile
+FIFA World Cup 2026, construita pentru angajatii FEG.
+
+Proiectul simuleaza o casa de pariuri reala, cu date live
+din competitia oficiala.
+
+
+CUM FUNCTIONEAZA
+----------------
+  • La prima deschidere, utilizatorul trebuie sa se inregistreze cu un adresa de emial a corporatiei, 
+    ulterior putand sa se logheze folosind emailul si parola.
+
+  • Meciurile sunt sincronizate in timp real prin API-ul din
+    football-data.org (date oficiale WC2026)
+
+  • Pariurile se plaseaza pe rezultatul unui meci:
+      1 = victorie echipa de acasa
+      X = egal
+      2 = victorie echipa in deplasare
+
+  • Pariurile se blocheaza automat la ora de start
+    a fiecarui meci
+
+  • Dupa terminarea meciului, punctele se acorda automat:
+      +3 puncte — pronostic corect
+      +0 puncte — pronostic gresit
+
+
+DATE REALE
+----------
+  Toate meciurile, scorurile si statusurile sunt date
+  reale din competitia FIFA World Cup 2026.
+
+  Sursa: football-data.org
+
+
+STACK TEHNIC
+------------
+  Frontend  : React + TypeScript + Vite + Tailwind CSS
+  Backend   : Python FastAPI + SQLite
+  API extern: football-data.org (WC2026)
+  Hosting   : VPS Ubuntu + nginx + Let's Encrypt
+
+
+================================================================
+  github.com/mivan1990
+================================================================`}</pre>
+            </div>
+          </DesktopWindow>
+        </div>
+      )}
+
+      {wins.readme_numlock.open && (
+        <div style={{ display: wins.readme_numlock.minimized ? 'none' : undefined }}>
+          <DesktopWindow title="Numlock.ro — README.txt — Notepad" imgSrc="/readme_icon.svg" onClose={() => closeWin('readme_numlock')} onMinimize={() => minimizeWin('readme_numlock')} maxWidth="680px">
+            <div style={{ height: '100%', overflowY: 'auto', background: 'white', padding: '16px 20px', fontFamily: 'Courier New, monospace', fontSize: '13px', lineHeight: '1.7', color: '#111' }}>
+              <pre style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{`================================================================
+  NUMLOCK.RO — Documentatie proiect
+================================================================
+
+Magazin online construit pe platfforma Shopify.
+
+ROL: Co-fondator · Administrator
+
+  • Setup si customizare completa platforma Shopify
+  • Personalizare design si experienta utilizator
+  • Mentenanta tehnica si operare curenta
+
+  numlock.ro
+
+================================================================`}</pre>
+            </div>
+          </DesktopWindow>
+        </div>
+      )}
+
       {wins.readme.open && (
         <div style={{ display: wins.readme.minimized ? 'none' : undefined }}>
           <DesktopWindow title="CS2 & Pariuri — README.txt — Notepad" imgSrc="/readme_icon.svg" onClose={() => closeWin('readme')} onMinimize={() => minimizeWin('readme')} maxWidth="680px">
@@ -4141,7 +4253,7 @@ Sistem de pariuri pe meciurile programate:
   • Cotele             — calculate automat pe baza K/D,
                          Win Rate si ADR al fiecarui jucator
   • Clasament pariuri  — punctaj acumulat de fiecare jucator
-                         (3 pct victorie, 1 pct egal, 0 pct pierdut)
+                         (3 pct victorie, 0 pct pierdut)
 
 Pariurile se blocheaza automat la ora meciului.
 
@@ -4153,10 +4265,16 @@ Adminul controleaza ambele aplicatii dintr-un singur panou:
   Sesiune live    — porneste/opreste captura datelor CS2
   Meciuri         — programeaza meciuri viitoare, seteaza
                     castigatori (activeaza procesarea pariurilor)
-  Jucatori CS     — adauga/editeaza jucatori, echipe, avatare
+  Istoric Meciuri — toate meciurile jucate cu scor, harta,
+                    castigator si numarul de bilete plasate
+  Jucatori CS     — adauga/editeaza jucatori si avatare
+  Echipe CS2      — gestioneaza echipele si componenta lor
   Utilizatori     — gestioneaza conturile de pariuri
   Loguri          — istoric complet al actiunilor din platforma
+  Loguri Bilete   — vizualizeaza toate pariurile per utilizator
   Baza de date    — backup/restore
+  Mesaj General   — afiseaza un mesaj vizibil pe desktop-ul
+                    tuturor utilizatorilor conectati
 
 
 STACK TEHNIC
@@ -4164,7 +4282,6 @@ STACK TEHNIC
   Frontend  : React + TypeScript + Vite + Tailwind CSS
   Backend   : Python FastAPI + SQLite
   Plugin CS2: C# (Game State Integration)
-  Hosting   : VPS Ubuntu + nginx + Let's Encrypt
 
 
 ================================================================
