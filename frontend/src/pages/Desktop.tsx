@@ -2987,7 +2987,7 @@ function AdminContent() {
                             border: '1px outset #888', color: 'white',
                           }}
                         >
-                          {u.is_admin ? 'Revoca admin' : 'Face admin'}
+                          {u.is_admin ? 'Revoca admin' : 'Seteaza admin'}
                         </button>
                       </td>
                     </tr>
