@@ -67,7 +67,10 @@ async def sync_matches() -> int:
             away = m.get("awayTeam", {})
             score = m.get("score", {})
             full_time = score.get("fullTime", {})
+            extra_time = score.get("extraTime", {}) or {}
+            penalties = score.get("penalties", {}) or {}
             winner_raw = score.get("winner")
+            duration_raw = score.get("duration")
             status = m.get("status", "SCHEDULED")
 
             existing = db.query(WorldCupMatch).filter(WorldCupMatch.external_id == ext_id).first()
@@ -85,8 +88,13 @@ async def sync_matches() -> int:
             existing.status = status
             existing.home_score = full_time.get("home")
             existing.away_score = full_time.get("away")
+            existing.extra_time_home = extra_time.get("home")
+            existing.extra_time_away = extra_time.get("away")
+            existing.penalties_home = penalties.get("home")
+            existing.penalties_away = penalties.get("away")
+            existing.duration = duration_raw
 
-            if status == "FINISHED" and existing.result is None:
+            if status == "FINISHED" and winner_raw and existing.result is None:
                 existing.result = _parse_result(winner_raw)
 
             count += 1

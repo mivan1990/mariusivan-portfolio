@@ -181,8 +181,13 @@ class WorldCupMatch(Base):
     stage = Column(String, nullable=True)            # GROUP_STAGE, ROUND_OF_16 ...
     group = Column(String, nullable=True)            # Group A, Group B ...
     status = Column(String, default="SCHEDULED")     # SCHEDULED, IN_PLAY, FINISHED ...
-    home_score = Column(Integer, nullable=True)
-    away_score = Column(Integer, nullable=True)
+    home_score = Column(Integer, nullable=True)      # fullTime
+    away_score = Column(Integer, nullable=True)      # fullTime
+    extra_time_home = Column(Integer, nullable=True)
+    extra_time_away = Column(Integer, nullable=True)
+    penalties_home = Column(Integer, nullable=True)
+    penalties_away = Column(Integer, nullable=True)
+    duration = Column(String, nullable=True)         # REGULAR, EXTRA_TIME, PENALTY_SHOOTOUT
     result = Column(String, nullable=True)           # 'home_win', 'away_win', 'draw'
     bets_processed = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)

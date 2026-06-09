@@ -32,6 +32,7 @@ def _optional_user(
 router = APIRouter(prefix="/api/worldcup", tags=["worldcup"])
 
 VALID_OUTCOMES = ("home_win", "away_win", "draw")
+KNOCKOUT_STAGES = ("ROUND_OF_16", "QUARTER_FINALS", "SEMI_FINALS", "THIRD_PLACE", "FINAL")
 
 
 def _fmt_match(m: WorldCupMatch, my_bet: WorldCupBet | None = None) -> dict:
@@ -48,6 +49,11 @@ def _fmt_match(m: WorldCupMatch, my_bet: WorldCupBet | None = None) -> dict:
         "status": m.status,
         "home_score": m.home_score,
         "away_score": m.away_score,
+        "extra_time_home": m.extra_time_home,
+        "extra_time_away": m.extra_time_away,
+        "penalties_home": m.penalties_home,
+        "penalties_away": m.penalties_away,
+        "duration": m.duration,
         "result": m.result,
         "bets_processed": m.bets_processed,
         "my_bet": None,
@@ -106,6 +112,8 @@ def place_bet(
         raise HTTPException(404, "Meciul nu a fost gasit")
     if _is_locked(match):
         raise HTTPException(400, "Meciul a inceput deja — nu mai poti paria")
+    if data.predicted_outcome == "draw" and match.stage in KNOCKOUT_STAGES:
+        raise HTTPException(400, "Egalul nu este posibil in fazele eliminatorii")
 
     existing = db.query(WorldCupBet).filter(
         WorldCupBet.user_id == current_user.id,
@@ -143,6 +151,8 @@ def update_bet(
         raise HTTPException(404, "Pariul nu a fost gasit")
     if _is_locked(bet.match):
         raise HTTPException(400, "Meciul a inceput deja — nu mai poti modifica")
+    if data.predicted_outcome == "draw" and bet.match.stage in KNOCKOUT_STAGES:
+        raise HTTPException(400, "Egalul nu este posibil in fazele eliminatorii")
 
     bet.predicted_outcome = data.predicted_outcome
     bet.updated_at = datetime.utcnow()
